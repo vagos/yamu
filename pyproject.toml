@@ -1,0 +1,33 @@
+[project]
+name = "yamu"
+version = "0.1.0"
+description = "game library manager"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["PyYAML>=6.0", "Jinja2>=3.1"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4", "ruff>=0.6.0"]
+docs = [
+    "sphinx>=7.2",
+    "pydata-sphinx-theme>=0.15",
+    "sphinx-copybutton>=0.5",
+    "sphinx-design>=0.5",
+]
+
+[project.scripts]
+yamu = "yamu.__main__:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["yamu", "yamu.dbcore", "yamu.library", "yamu.ui", "yamu.ui.commands", "yamu.util", "yamu.importer", "yamuplug"]
+
+[tool.setuptools.package-data]
+yamu = ["config_default.yaml"]
+yamuplug = ["web/static/*.css", "web/static/*.js", "web/templates/*.html"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

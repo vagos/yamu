@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="/static/yamu.css">
+  </head>
+  <body>
+    <div id="header">
+      <h1>yamu</h1>
+    </div>
+    <div id="entities">
+      <form id="queryForm">
+        <input type="search" id="query" placeholder="Query">
+      </form>
+      <ul id="results"></ul>
+    </div>
+    <div id="main-detail"></div>
+    <div id="extra-detail"></div>
+    <script>
+      const resultsEl = document.getElementById('results');
+      const queryEl = document.getElementById('query');
+      const mainEl = document.getElementById('main-detail');
+      const extraEl = document.getElementById('extra-detail');
+
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.innerText = text ?? '';
+        return div.innerHTML;
+      }
+
+      function renderList(items) {
+        resultsEl.innerHTML = '';
+        resultsEl.dataset.count = String(items.length);
+        items.forEach((item, idx) => {
+          const li = document.createElement('li');
+          li.dataset.id = item.id;
+          li.innerText = item.title || '(untitled)';
+          if (idx === 0) li.classList.add('selected');
+          li.addEventListener('click', () => selectItem(item.id));
+          resultsEl.appendChild(li);
+        });
+        if (items.length) {
+          selectItem(items[0].id);
+        } else {
+          mainEl.innerHTML = '<p>No results.</p>';
+          extraEl.innerHTML = '';
+        }
+      }
+
+      function renderDetail(item) {
+        const art = item.artpath ? `<div style="margin: 4px 0 8px;"><img src="/api/games/${item.id}/art" alt="art" style="max-width: 320px; border: 1px solid #ccc;"></div>` : '';
+        const fields = Object.keys(item).filter((key) => key !== 'id' && key !== 'title');
+        const rows = fields
+          .filter(key => item[key] !== null && item[key] !== undefined && item[key] !== '')
+          .map(key => `<dt>${escapeHtml(key)}</dt><dd>${escapeHtml(item[key])}</dd>`)
+          .join('');
+        mainEl.innerHTML = `
+          <span class="title">${escapeHtml(item.title)}</span>
+        `;
+        extraEl.innerHTML = `${art}<dl>${rows}<dt>achievements</dt><dd><div class="achievements-toggle"></div><div class="achievements-list"></div></dd></dl>`;
+        renderAchievements(item.id);
+      }
+
+      function selectItem(id) {
+        document.querySelectorAll('#results li').forEach(li => {
+          li.classList.toggle('selected', li.dataset.id === String(id));
+        });
+        fetch(`/api/games/${id}`)
+          .then(res => res.json())
+          .then(renderDetail)
+          .catch(() => { mainEl.innerHTML = '<p>Failed to load.</p>'; });
+      }
+
+      function renderAchievements(gameId) {
+        fetch(`/api/games/${gameId}/achievements`)
+          .then(res => res.json())
+          .then(data => {
+            const rows = (data.achievements || []).map((ach) => {
+              const status = ach.achieved ? 'unlocked' : 'locked';
+              const name = escapeHtml(ach.name || ach.api_name || 'Achievement');
+              const desc = ach.description ? escapeHtml(ach.description) : '';
+              const title = desc ? `${name}: ${desc}` : name;
+              const icon = ach.icon || ach.icon_gray || '';
+              const img = icon ? `<img class="ach-icon" src="${icon}" alt="${title}" title="${title}">` : '';
+              return `<li class="ach ${status}">${img}</li>`;
+            }).join('');
+            const toggle = extraEl.querySelector('.achievements-toggle');
+            const listBlock = extraEl.querySelector('.achievements-list');
+            if (!toggle || !listBlock) return;
+            if (!rows) {
+              toggle.innerHTML = '-';
+              listBlock.innerHTML = '';
+              return;
+            }
+            const total = (data.achievements || []).length;
+            const unlocked = (data.achievements || []).filter((ach) => ach.achieved).length;
+            toggle.innerHTML = `<span class="ach-toggle">(${unlocked}/${total})</span>`;
+            listBlock.innerHTML = `<ul class="ach-list" style="display: none;">${rows}</ul>`;
+            const toggleEl = toggle.querySelector('.ach-toggle');
+            const list = listBlock.querySelector('.ach-list');
+            toggleEl.addEventListener('click', () => {
+              const open = list.style.display !== 'none';
+              list.style.display = open ? 'none' : 'grid';
+            });
+          })
+          .catch(() => {});
+      }
+
+      function selectByIndex(index) {
+        const items = Array.from(document.querySelectorAll('#results li'));
+        if (!items.length) return;
+        const clamped = Math.max(0, Math.min(index, items.length - 1));
+        const id = items[clamped].dataset.id;
+        selectItem(id);
+        items[clamped].scrollIntoView({ block: 'nearest' });
+      }
+
+      function search(query) {
+        fetch(`/api/games?q=${encodeURIComponent(query)}`)
+          .then(res => res.json())
+          .then(data => renderList(data.games || []))
+          .catch(() => { mainEl.innerHTML = '<p>Failed to load.</p>'; });
+      }
+
+      document.getElementById('queryForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        search(queryEl.value);
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+        const items = Array.from(document.querySelectorAll('#results li'));
+        if (!items.length) return;
+        const currentIndex = items.findIndex((li) => li.classList.contains('selected'));
+        const nextIndex = e.key === 'ArrowDown' ? currentIndex + 1 : currentIndex - 1;
+        selectByIndex(nextIndex);
+        e.preventDefault();
+      });
+
+      search('');
+    </script>
+  </body>
+</html>

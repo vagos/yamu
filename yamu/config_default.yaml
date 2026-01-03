@@ -1,0 +1,42 @@
+library: "~/.local/share/yamu/library.db"
+ui:
+  columns: ["id", "title", "platform", "release_date"]
+  color: true
+  date_format: "$year"
+  colors:
+    text_success: ["green"]
+    text_warning: ["yellow"]
+    text_error: ["red"]
+    text_highlight: ["bold", "white"]
+    text_highlight_minor: ["bold", "cyan"]
+    text_faint: ["faint", "white"]
+    action: ["bold", "cyan"]
+    action_default: ["bold", "green"]
+    action_description: ["faint", "white"]
+    changed: ["bold", "yellow"]
+    text_diff_added: ["green"]
+    text_diff_removed: ["red"]
+import:
+  threads: 2
+plugins: []
+web:
+  host: "127.0.0.1"
+  port: 8337
+fetchart:
+  dir: "~/.local/share/yamu/art"
+steam:
+  api_key: ""
+  steam_ids: []
+  fetch_details: true
+  fetch_achievements: true
+  delay: 0.2
+  retries: 3
+  backoff: 1.0
+  cache_ttl: 604800
+  cache_path: ""
+igdb:
+  client_id: ""
+  client_secret: ""
+  access_token: ""
+  search_limit: 5
+  token_cache_path: ""
