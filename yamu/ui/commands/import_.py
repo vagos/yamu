@@ -68,7 +68,9 @@ def run(args: argparse.Namespace, library: Library) -> int:
             threads = config_threads
         else:
             threads = 2
-    search_providers = [provider for provider in providers if hasattr(provider, "search")]
+    search_providers = [
+        provider for provider in providers if hasattr(provider, "search")
+    ]
     provider = CandidateProvider(search_providers, config)
     importer = Importer(
         library,

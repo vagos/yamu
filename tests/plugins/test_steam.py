@@ -54,7 +54,10 @@ def test_search_uses_appid(monkeypatch) -> None:
     provider = steam.SteamImportProvider()
 
     def fake_details(_appid, **_kwargs):
-        return {"release_date": {"date": "Nov 29, 2006"}, "genres": [{"description": "Action"}]}
+        return {
+            "release_date": {"date": "Nov 29, 2006"},
+            "genres": [{"description": "Action"}],
+        }
 
     def fake_achievements(_steam_id, _api_key, _appid, **_kwargs):
         return [{"name": "Achieve", "achieved": 1}]

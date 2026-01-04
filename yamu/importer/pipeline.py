@@ -382,9 +382,7 @@ class Importer:
                         continue
                     game = self.library.add_game(edited.fields)
                     completed += 1
-                    self._apply_achievements(
-                        game.id, edited.fields.get("achievements")
-                    )
+                    self._apply_achievements(game.id, edited.fields.get("achievements"))
                     if on_imported is not None:
                         on_imported(game)
                     break
