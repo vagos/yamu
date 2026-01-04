@@ -5,8 +5,8 @@ import argparse
 from yamu.library.library import Library
 from yamu.util.color import error, info, success, warning
 from yamu.util.prompt import input_options
-from yamuplug.completionist import suggest_beaten_from_achievements
-from yamuplug.completionist import normalize_status, STATUSES
+from yamuplug.completion import suggest_beaten_from_achievements
+from yamuplug.completion import normalize_status, STATUSES
 
 
 def add_subparser(subparsers: argparse._SubParsersAction) -> None:

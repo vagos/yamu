@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from yamuplug import completionist
+from yamuplug import completion
 
 
 def test_normalize_status() -> None:
-    assert completionist.normalize_status("Played") == "played"
+    assert completion.normalize_status("Played") == "played"
 
 
 def test_suggest_beaten_from_achievements(library, monkeypatch) -> None:
@@ -17,9 +17,9 @@ def test_suggest_beaten_from_achievements(library, monkeypatch) -> None:
         ],
     )
     monkeypatch.setattr(
-        "yamuplug.completionist.input_options", lambda *args, **kwargs: "a"
+        "yamuplug.completion.input_options", lambda *args, **kwargs: "a"
     )
-    assert completionist.suggest_beaten_from_achievements(library, game.id) is True
+    assert completion.suggest_beaten_from_achievements(library, game.id) is True
     updated = library.get_game(game.id)
     assert updated is not None
     assert updated.status == "beaten"
@@ -34,7 +34,7 @@ def test_auto_mark_beaten_from_achievements(library) -> None:
             {"api_name": "b", "name": "B", "achieved": 1},
         ],
     )
-    completionist.auto_mark_beaten_from_achievements(library, game.id)
+    completion.auto_mark_beaten_from_achievements(library, game.id)
     updated = library.get_game(game.id)
     assert updated is not None
     assert updated.status == "beaten"

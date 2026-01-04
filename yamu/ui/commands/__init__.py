@@ -6,7 +6,7 @@ __all__ = [
     "steam",
     "import_",
     "edit",
-    "completionist",
+    "completion",
     "web",
     "fetchart",
 ]

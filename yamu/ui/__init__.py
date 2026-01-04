@@ -13,7 +13,7 @@ from yamu.ui.commands import (
     steam,
     import_,
     edit,
-    completionist,
+    completion,
     web,
     fetchart,
 )
@@ -41,7 +41,7 @@ def _build_parser() -> argparse.ArgumentParser:
     if "steam" in enabled:
         steam.add_subparser(subparsers)
     if "completion" in enabled:
-        completionist.add_subparser(subparsers)
+        completion.add_subparser(subparsers)
     if "web" in enabled:
         web.add_subparser(subparsers)
     if "fetchart" in enabled:
