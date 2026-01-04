@@ -63,7 +63,14 @@ def test_search_uses_appid(monkeypatch) -> None:
     monkeypatch.setattr(steam, "fetch_game_achievements", fake_achievements)
 
     game = type("G", (), {"title": "Game A", "path": "steam://1"})()
-    config = {"steam": {"fetch_details": True, "fetch_achievements": True, "steam_ids": ["1"]}}
+    config = {
+        "steam": {
+            "fetch_details": True,
+            "fetch_achievements": True,
+            "steam_ids": ["1"],
+            "api_key": "x",
+        }
+    }
     candidates = provider.search(game, config)
     assert len(candidates) == 1
     fields = candidates[0].fields
