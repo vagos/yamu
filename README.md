@@ -15,16 +15,11 @@ Run `pipx install yamu` to install via pipx.
 Run `yamu --help` to see commands.
 
 ```
-yamu add --title "Doom" --genre Shooter # Add a new game
-yamu add                                # Add a new game interactively
-yamu list platform:pc                   # List games that match a query
-yamu update 1 --genre "fps"             # Update game metadata
-yamu remove 1                           # Remove a game by ID
-yamu import                             # Import games from configured platforms
-yamu list platform:steam                # List all Steam games
-yamu completion                         # Mark games as completed
-yamu fetchart platform:steam            # Fetch cover art for Steam games
-yamu web                                # Open the web interface to view your library
+yamu import                           # Import games from configured platforms
+yamu list platform:steam genre:action # List all Steam games in the action genre
+yamu completion                       # Mark games as completed, interaactively
+yamu fetchart                         # Fetch cover art games
+yamu web                              # Open the web interface to view your library
 ```
 
 For `yamu import`, configure plugins in `~/.config/yamu/config.yaml`:
