@@ -40,3 +40,6 @@ igdb:
   access_token: ""
   search_limit: 5
   token_cache_path: ""
+epic:
+  legendary_path: "legendary"
+  delay: 0.0

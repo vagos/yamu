@@ -90,3 +90,11 @@ IGDB metadata settings:
 - ``access_token``: optional access token override.
 - ``search_limit``: number of search results to return. Default: ``5``.
 - ``token_cache_path``: override cache path for tokens.
+
+epic
+~~~~
+
+Epic integration settings:
+
+- ``legendary_path``: path to the ``legendary`` executable. Default: ``legendary``.
+- ``delay``: seconds between info requests.

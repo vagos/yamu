@@ -9,6 +9,7 @@ under ``plugins`` and configure them in top-level sections.
 
     steam
     igdb
+    epic
     fetchart
     web
     completion
