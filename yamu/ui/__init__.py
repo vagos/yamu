@@ -38,8 +38,6 @@ def _build_parser() -> argparse.ArgumentParser:
     remove.add_subparser(subparsers)
     import_.add_subparser(subparsers)
     edit.add_subparser(subparsers)
-    if "steam" in enabled:
-        steam.add_subparser(subparsers)
     if "completion" in enabled:
         completion.add_subparser(subparsers)
     if "web" in enabled:
