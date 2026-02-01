@@ -10,7 +10,6 @@ from yamu.ui.commands import (
     list_,
     update,
     remove,
-    steam,
     import_,
     edit,
     completion,
