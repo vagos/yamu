@@ -20,6 +20,18 @@ class OneGameProvider:
         return iter((ImportTask(original={"title": "Game A", "path": "steam://1"}),))
 
 
+class DuplicateProvider:
+    name = "dup"
+
+    def tasks(self, _config):
+        return iter(
+            (
+                ImportTask(original={"title": "Game A", "path": "steam://1"}),
+                ImportTask(original={"title": "Game A", "path": "steam://1"}),
+            )
+        )
+
+
 def test_import_empty_library(library, monkeypatch, capsys) -> None:
     monkeypatch.setattr(import_cmd, "import_providers", lambda: [EmptyProvider()])
     monkeypatch.setattr(import_cmd, "load_config", lambda: {"plugins": ["empty"]})
@@ -32,6 +44,18 @@ def test_import_empty_library(library, monkeypatch, capsys) -> None:
 def test_import_single_game(library, monkeypatch, capsys) -> None:
     monkeypatch.setattr(import_cmd, "import_providers", lambda: [OneGameProvider()])
     monkeypatch.setattr(import_cmd, "load_config", lambda: {"plugins": ["one"]})
+    monkeypatch.setattr(
+        "yamu.importer.pipeline.input_options", lambda *args, **kwargs: "a"
+    )
+    args = SimpleNamespace(threads=None, force=False)
+    assert import_cmd.run(args, library) == 0
+    output = capsys.readouterr().out
+    assert "Imported 1 games" in output
+
+
+def test_import_dedupes_paths(library, monkeypatch, capsys) -> None:
+    monkeypatch.setattr(import_cmd, "import_providers", lambda: [DuplicateProvider()])
+    monkeypatch.setattr(import_cmd, "load_config", lambda: {"plugins": ["dup"]})
     monkeypatch.setattr(
         "yamu.importer.pipeline.input_options", lambda *args, **kwargs: "a"
     )

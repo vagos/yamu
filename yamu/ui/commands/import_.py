@@ -45,6 +45,7 @@ def run(args: argparse.Namespace, library: Library) -> int:
         return 1
 
     existing_paths = {game.path for game in library.list_games() if game.path}
+    seen_paths = set() if args.force else set(existing_paths)
 
     def task_source():
         for provider in providers:
@@ -54,9 +55,15 @@ def run(args: argparse.Namespace, library: Library) -> int:
                     if args.force:
                         if not path or str(path) not in existing_paths:
                             continue
-                    else:
-                        if path and str(path) in existing_paths:
+                        if str(path) in seen_paths:
                             continue
+                        seen_paths.add(str(path))
+                    else:
+                        if path:
+                            path = str(path)
+                            if path in seen_paths:
+                                continue
+                            seen_paths.add(path)
                     yield task
             except Exception as exc:
                 print(error(f"{provider.name} import failed: {exc}"))

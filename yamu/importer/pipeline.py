@@ -100,15 +100,7 @@ class Importer:
                     return ("q", selected)
                 return ("s", selected)
 
-        print("\nChanges:")
-        changed = show_model_changes(
-            task.original,
-            candidates[selected].fields,
-            GAME_FIELDS,
-            header="",
-        )
-        if not changed:
-            print(info("No changes."))
+        self._print_fields("Metadata", candidates[selected].fields)
 
         if len(candidates) > 1:
             choice = input_options(
