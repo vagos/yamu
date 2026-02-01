@@ -62,9 +62,10 @@ remove
 
 ::
 
-    yamu remove QUERY...
+    yamu remove [--raw] QUERY...
 
 Remove games from the library.
+Use ``--raw`` to print the matched games without removing them.
 
 edit
 ~~~~
