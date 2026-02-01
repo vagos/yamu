@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
@@ -12,6 +13,22 @@ class Database:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.conn = sqlite3.connect(self.path)
         self.conn.row_factory = sqlite3.Row
+        self.conn.create_function("regexp", 2, self._regexp)
+
+    @staticmethod
+    def _regexp(value: Any, pattern: Any) -> int:
+        if pattern is None:
+            return 0
+        if value is None:
+            value = ""
+        if isinstance(pattern, bytes):
+            pattern = pattern.decode("utf-8", "ignore")
+        if isinstance(value, bytes):
+            value = value.decode("utf-8", "ignore")
+        try:
+            return 1 if re.search(str(pattern), str(value)) else 0
+        except (re.error, TypeError):
+            return 0
 
     def execute(self, sql: str, params: Iterable[Any] = ()) -> sqlite3.Cursor:
         return self.conn.execute(sql, tuple(params))

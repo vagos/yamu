@@ -33,3 +33,24 @@ Multiple terms are combined with AND semantics:
 ::
 
     yamu list platform:steam "half life"
+
+Regular expressions
+-------------------
+
+Use a double colon to run a regex against a specific field:
+
+::
+
+    yamu list title::^half
+
+To search all fields with a regex, prefix the pattern with a single colon:
+
+::
+
+    yamu list :Half-Life
+
+Regexes are case-sensitive. To list games missing an art path, use:
+
+::
+
+    yamu list artpath::^$

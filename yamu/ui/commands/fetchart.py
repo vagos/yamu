@@ -4,7 +4,7 @@ import argparse
 
 from yamu.library.library import Library
 from yamu.util.color import error, info, success
-from yamu.util.query import allowed_game_fields, build_query
+from yamu.util.query import build_game_query
 from yamu.util.config import load_config
 from yamuplug.fetchart import FetchArtError, fetch_art_for_game, fetch_art_for_path
 
@@ -18,8 +18,7 @@ def add_subparser(subparsers: argparse._SubParsersAction) -> None:
 
 def run(args: argparse.Namespace, library: Library) -> int:
     config = load_config()
-    allowed_fields = allowed_game_fields() | {"status", "artpath"}
-    query = build_query(args.query, allowed_fields)
+    query, _ = build_game_query(args.query, extra_fields={"status", "artpath"})
     games = library.list_games(query)
 
     if not games:

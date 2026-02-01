@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Iterable, Sequence
 
 
@@ -42,6 +43,18 @@ class ContainsQuery(Query):
 
 
 @dataclass
+class RegexpQuery(Query):
+    field: str
+    pattern: str
+
+    def __post_init__(self) -> None:
+        re.compile(self.pattern)
+
+    def clause(self) -> tuple[str, list[str]]:
+        return f"regexp({self.field}, ?)", [self.pattern]
+
+
+@dataclass
 class AndQuery(Query):
     queries: Sequence[Query]
 
@@ -57,6 +70,22 @@ class AndQuery(Query):
         return " AND ".join(clauses), params
 
 
+@dataclass
+class OrQuery(Query):
+    queries: Sequence[Query]
+
+    def clause(self) -> tuple[str, list[str]]:
+        if not self.queries:
+            return "0", []
+        clauses: list[str] = []
+        params: list[str] = []
+        for query in self.queries:
+            clause, qparams = query.clause()
+            clauses.append(f"({clause})")
+            params.extend(qparams)
+        return " OR ".join(clauses), params
+
+
 def parse_query(
     parts: Iterable[str],
     default_field: str,
@@ -65,7 +94,25 @@ def parse_query(
 ) -> Query:
     queries: list[Query] = []
     contains = contains_fields or set()
+    any_fields = sorted(allowed_fields)
     for part in parts:
+        if part.startswith(":") and not part.startswith("::"):
+            pattern = part[1:]
+            queries.append(
+                OrQuery([RegexpQuery(field, pattern) for field in any_fields])
+            )
+            continue
+        if "::" in part:
+            field, value = part.split("::", 1)
+            if not field:
+                queries.append(
+                    OrQuery([RegexpQuery(name, value) for name in any_fields])
+                )
+                continue
+            if field not in allowed_fields:
+                raise ValueError(f"Unknown field: {field}")
+            queries.append(RegexpQuery(field, value))
+            continue
         if ":" in part:
             field, value = part.split(":", 1)
             if field not in allowed_fields:

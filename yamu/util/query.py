@@ -18,3 +18,16 @@ def build_query(parts: list[str], allowed_fields: set[str]) -> Query:
         allowed_fields=allowed_fields,
         contains_fields=CONTAINS_FIELDS,
     )
+
+
+def build_game_query(
+    parts: list[str],
+    *,
+    include_id: bool = True,
+    extra_fields: set[str] | None = None,
+) -> tuple[Query, set[str]]:
+    allowed_fields = allowed_game_fields(include_id=include_id)
+    if extra_fields:
+        allowed_fields = allowed_fields | set(extra_fields)
+    query = build_query(parts, allowed_fields)
+    return query, allowed_fields

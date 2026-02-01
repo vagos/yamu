@@ -4,7 +4,7 @@ import argparse
 import re
 from yamu.library.library import Library
 from yamu.util.color import error
-from yamu.util.query import allowed_game_fields, build_query
+from yamu.util.query import build_game_query
 
 
 def add_subparser(subparsers: argparse._SubParsersAction) -> None:
@@ -31,8 +31,7 @@ def _render_format(fmt: str, game: object, allowed_fields: set[str]) -> str:
 
 
 def run(args: argparse.Namespace, library: Library) -> int:
-    allowed_fields = allowed_game_fields()
-    query = build_query(args.query, allowed_fields)
+    query, allowed_fields = build_game_query(args.query)
     games = library.list_games(query)
 
     fmt = args.format or "$title"

@@ -39,3 +39,25 @@ def test_parse_query_field_exact() -> None:
 def test_parse_query_unknown_field() -> None:
     with pytest.raises(ValueError):
         parse_query(["nope:value"], default_field="title", allowed_fields={"title"})
+
+
+def test_parse_query_field_regex() -> None:
+    query = parse_query(
+        ["title::^$"],
+        default_field="title",
+        allowed_fields={"title"},
+    )
+    clause, params = query.clause()
+    assert clause == "(regexp(title, ?))"
+    assert params == ["^$"]
+
+
+def test_parse_query_any_field_regex() -> None:
+    query = parse_query(
+        [":^$"],
+        default_field="title",
+        allowed_fields={"title", "artpath"},
+    )
+    clause, params = query.clause()
+    assert clause == "((regexp(artpath, ?)) OR (regexp(title, ?)))"
+    assert params == ["^$", "^$"]

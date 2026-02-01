@@ -10,7 +10,7 @@ from yamu.util.color import error, info, success, warning
 from yamu.util.prompt import input_yn
 from yamu.util.edit_flow import edit_items_in_editor, diff_item, prompt_apply_changes
 from yamu.util.editor import dump_yaml
-from yamu.util.query import allowed_game_fields, build_query
+from yamu.util.query import build_game_query
 
 
 EDIT_FIELDS = ["id"] + GAME_FIELDS
@@ -23,8 +23,7 @@ def add_subparser(subparsers: argparse._SubParsersAction) -> None:
 
 
 def _select_games(args: argparse.Namespace, library: Library) -> List[Dict[str, Any]]:
-    allowed_fields = allowed_game_fields()
-    query = build_query(args.query, allowed_fields)
+    query, _ = build_game_query(args.query)
     games = library.list_games(query)
     items: List[Dict[str, Any]] = []
     for game in games:
