@@ -42,6 +42,17 @@ igdb:
   client_secret: "your_client_secret"
 ```
 
+## Development
+
+Create a virtual environment, install dev dependencies, and run tests:
+
+```
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[dev]"
+python -m pytest
+```
+
 ## Acknowledgements
 
 - [The beets project for inspiring the design of this tool.](https://beets.io/)
