@@ -30,6 +30,15 @@
         return div.innerHTML;
       }
 
+      function formatKey(key) {
+        return String(key)
+          .replace(/_/g, ' ')
+          .split(' ')
+          .filter(Boolean)
+          .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+          .join(' ');
+      }
+
       function renderList(items) {
         resultsEl.innerHTML = '';
         resultsEl.dataset.count = String(items.length);
@@ -51,15 +60,15 @@
 
       function renderDetail(item) {
         const art = item.artpath ? `<div style="margin: 4px 0 8px;"><img src="/api/games/${item.id}/art" alt="art" style="max-width: 320px; border: 1px solid #ccc;"></div>` : '';
-        const fields = Object.keys(item).filter((key) => key !== 'id' && key !== 'title');
+        const fields = Object.keys(item).filter((key) => key !== 'id' && key !== 'title' && key !== 'artpath');
         const rows = fields
           .filter(key => item[key] !== null && item[key] !== undefined && item[key] !== '')
-          .map(key => `<dt>${escapeHtml(key)}</dt><dd>${escapeHtml(item[key])}</dd>`)
+          .map(key => `<dt>${escapeHtml(formatKey(key))}</dt><dd>${escapeHtml(item[key])}</dd>`)
           .join('');
         mainEl.innerHTML = `
           <span class="title">${escapeHtml(item.title)}</span>
         `;
-        extraEl.innerHTML = `${art}<dl>${rows}<dt>achievements</dt><dd><div class="achievements-toggle"></div><div class="achievements-list"></div></dd></dl>`;
+        extraEl.innerHTML = `${art}<dl>${rows}<dt>${escapeHtml(formatKey('achievements'))}</dt><dd><div class="achievements-toggle"></div><div class="achievements-list"></div></dd></dl>`;
         renderAchievements(item.id);
       }
 
