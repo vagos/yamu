@@ -2,9 +2,8 @@
 
 > A game library manager for geeks.
 
-I needed a simple way to manage my game collection across multiple platforms (Steam, GOG, itch.io, etc).
-Existing tools covered different subsets of my needs, so I created `yamu` to fill in the gaps and provide an interface that allows for extremely fast categorization and searching of my game library.
-This tool is built to be highly extensible via plugins, so you can add support for new platforms or features as needed.
+Yamu provides a simple way to manage game collections across multiple platforms (Steam, GOG, itch.io, etc).
+The tool is is extensible to support new platforms and features via plugins, and is composable with other UNIX tools and cli utilities.
 
 ## Installation
 
@@ -55,5 +54,5 @@ python -m pytest
 
 ## Acknowledgements
 
-- [The beets project for inspiring the design of this tool.](https://beets.io/)
-- [Yamu icon created by Ehtisham Abid](https://www.flaticon.com/free-icons/yamu)
+- [The beets project for inspiring yamu's design.](https://beets.io/)
+- [Icon by Ehtisham Abid](https://www.flaticon.com/free-icon/yam_5687397)
