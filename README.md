@@ -3,7 +3,7 @@
 > A game library manager for geeks.
 
 Yamu provides a simple way to manage game collections across multiple platforms (Steam, GOG, itch.io, etc).
-The tool is is extensible to support new platforms and features via plugins, and is composable with other UNIX tools and cli utilities.
+It is extensible, supporting new platforms and features via plugins, and is composable with other UNIX tools and cli utilities.
 
 ## Installation
 
