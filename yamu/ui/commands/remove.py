@@ -8,7 +8,11 @@ from yamu.util.query import build_game_query
 
 
 def add_subparser(subparsers: argparse._SubParsersAction) -> None:
-    parser = subparsers.add_parser("remove", help="Remove games from the library")
+    parser = subparsers.add_parser(
+        "remove",
+        aliases=("rm",),
+        help="Remove games from the library",
+    )
     parser.add_argument(
         "--raw",
         action="store_true",
