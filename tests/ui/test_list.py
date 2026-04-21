@@ -1,8 +1,20 @@
 from __future__ import annotations
 
+import argparse
 from types import SimpleNamespace
 
 from yamu.ui.commands import list_ as list_cmd
+
+
+def test_list_subparser_accepts_ls_alias() -> None:
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    list_cmd.add_subparser(subparsers)
+
+    args = parser.parse_args(["ls"])
+
+    assert args.command == "ls"
+    assert args.func is list_cmd.run
 
 
 def test_list_command_outputs_titles(library, capsys) -> None:

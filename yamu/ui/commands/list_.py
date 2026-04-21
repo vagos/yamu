@@ -8,7 +8,7 @@ from yamu.util.query import build_game_query
 
 
 def add_subparser(subparsers: argparse._SubParsersAction) -> None:
-    parser = subparsers.add_parser("list", help="List games")
+    parser = subparsers.add_parser("list", aliases=("ls",), help="List games")
     parser.add_argument("query", nargs="*", help="Query parts (field:value or terms)")
     parser.add_argument("-f", "--format", help="Format string with $fields")
     parser.set_defaults(func=run)

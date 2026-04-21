@@ -33,7 +33,7 @@ list
 
 ::
 
-    yamu list [QUERY...]
+    yamu list|ls [QUERY...]
 
 List games in the library. Without a query, lists all titles. Queries accept
 simple ``field:value`` filters or free-text substring matches. See
