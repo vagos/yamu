@@ -49,3 +49,28 @@ def test_search_returns_candidates(monkeypatch) -> None:
     assert len(candidates) == 2
     assert candidates[0].fields["title"] == "Doom"
     assert candidates[0].fields["igdb_rating"] == 80.0
+
+
+def test_fetch_igdb_games_escapes_search_term(monkeypatch) -> None:
+    captured: dict[str, str] = {}
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return b"[]"
+
+    def fake_urlopen(request, timeout=30):
+        assert timeout == 30
+        captured["query"] = request.data.decode("utf-8")
+        return FakeResponse()
+
+    monkeypatch.setattr(igdb, "get_igdb_token", lambda _config: "token")
+    monkeypatch.setattr(igdb.urllib.request, "urlopen", fake_urlopen)
+
+    assert igdb.fetch_igdb_games('Alpha"Beta', {"igdb": {"client_id": "client"}}) == []
+    assert 'search "Alpha\\"Beta";' in captured["query"]

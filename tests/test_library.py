@@ -67,3 +67,20 @@ def test_ignore_import_paths_are_persisted(tmp_path: Path) -> None:
         assert lib.list_ignored_import_paths() == {"steam://1", "steam://2"}
     finally:
         lib.close()
+
+
+def test_remove_game_also_removes_achievements(tmp_path: Path) -> None:
+    db_path = tmp_path / "library.db"
+    lib = Library(str(db_path))
+    try:
+        game = lib.add_game({"title": "Game A"})
+        lib.upsert_achievements(
+            game.id,
+            [{"api_name": "ach-1", "name": "Achievement", "achieved": 1}],
+        )
+
+        assert len(lib.list_achievements(game.id)) == 1
+        assert lib.remove_game(game.id) is True
+        assert lib.list_achievements(game.id) == []
+    finally:
+        lib.close()

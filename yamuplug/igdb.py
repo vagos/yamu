@@ -7,7 +7,7 @@ import urllib.parse
 import urllib.request
 from typing import Any
 
-from yamu.importer.pipeline import ImportCandidate, ImportTask
+from yamu.importer.pipeline import ImportCandidate
 from yamuplug import register_import_provider
 
 
@@ -109,7 +109,7 @@ def fetch_igdb_games(term: str, config: dict, limit: int = 5) -> list[dict]:
     client_id = _get_client_id(config)
     token = get_igdb_token(config)
     query = (
-        f'search "{term}"; '
+        f"search {json.dumps(term)}; "
         "fields name,first_release_date,genres.name,platforms.name,"
         "involved_companies.developer,involved_companies.publisher,"
         "rating,aggregated_rating,"

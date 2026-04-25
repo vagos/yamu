@@ -177,6 +177,7 @@ class Library:
 
     def remove_game(self, game_id: int) -> bool:
         with self.db.transaction():
+            self.db.execute("DELETE FROM achievements WHERE game_id = ?", [game_id])
             cur = self.db.execute("DELETE FROM games WHERE id = ?", [game_id])
         return cur.rowcount > 0
 

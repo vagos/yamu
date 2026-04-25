@@ -32,7 +32,9 @@ def load_plugins(names: Iterable[str]) -> None:
             continue
         try:
             import_module(f"yamuplug.{name}")
-        except ModuleNotFoundError:
+        except ModuleNotFoundError as exc:
+            if exc.name != f"yamuplug.{name}":
+                raise
             print(warning(f"Plugin not found: {name}"))
             continue
         _LOADED_PLUGINS.add(name)

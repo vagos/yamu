@@ -15,6 +15,14 @@ def _asset_path(rel: str) -> Path:
     return Path(__file__).parent / "web" / rel
 
 
+def _resolve_static_path(rel: str) -> Path | None:
+    root = _asset_path("static").resolve()
+    path = (root / rel).resolve()
+    if path == root or root in path.parents:
+        return path
+    return None
+
+
 def _content_type_for_path(path: Path) -> str:
     ext = path.suffix.lower()
     if ext in {".jpg", ".jpeg"}:
@@ -91,7 +99,11 @@ class WebHandler(BaseHTTPRequestHandler):
 
         if self.path.startswith("/static/"):
             rel = self.path[len("/static/") :]
-            self._send_file_path(200, _asset_path(f"static/{rel}"))
+            path = _resolve_static_path(rel)
+            if path is None:
+                self._send_json(404, {"error": "not found"})
+                return
+            self._send_file_path(200, path)
             return
 
         if self.path.startswith("/api/games/"):
@@ -159,7 +171,7 @@ class WebHandler(BaseHTTPRequestHandler):
         self._send(code, path.read_bytes(), content_type)
 
     def _send_file_path(self, code: int, path: Path) -> None:
-        if not path.exists():
+        if not path.exists() or not path.is_file():
             self._send_json(404, {"error": "not found"})
             return
         content_type = _content_type_for_path(path)
