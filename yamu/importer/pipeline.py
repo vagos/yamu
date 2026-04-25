@@ -170,12 +170,16 @@ class Importer:
                     print(f"    {label} ({similarity}) {summary}")
 
                 choice = input_options_with_numbers(
-                    ("Skip", "Quit"),
+                    ("Skip", "Ignore", "Quit"),
                     len(candidates),
                 )
                 if choice.isdigit():
                     selected = int(choice) - 1
                     break
+                if choice == "i":
+                    if self._ignore_import(task.original):
+                        return ("i", selected)
+                    continue
                 if choice == "q":
                     return ("q", selected)
                 return ("s", selected)
@@ -184,10 +188,10 @@ class Importer:
 
         if len(candidates) > 1:
             choice = input_options(
-                ("Accept", "More candidates", "Skip", "Edit", "Quit")
+                ("Accept", "More candidates", "Skip", "Edit", "Ignore", "Quit")
             )
         else:
-            choice = input_options(("Accept", "Skip", "Edit", "Quit"))
+            choice = input_options(("Accept", "Skip", "Edit", "Ignore", "Quit"))
         return (choice, selected)
 
     def _edit_candidate(self, candidate: ImportCandidate) -> ImportCandidate:
@@ -263,6 +267,17 @@ class Importer:
         if achievements:
             self.library.upsert_achievements(game_id, achievements)
 
+    def _ignore_import(self, fields: Dict[str, Any]) -> bool:
+        path = fields.get("path")
+        if not path:
+            print(warning("Cannot ignore an import without a path."))
+            return False
+        title = str(fields.get("title") or "Unknown")
+        rendered_path = str(path)
+        self.library.ignore_import_path(rendered_path, fields.get("title"))
+        print(info(f'Ignoring future imports for "{title}" ({rendered_path}).'))
+        return True
+
     def _game_fields(self, game: Any) -> Dict[str, Any]:
         return {field: getattr(game, field) for field in GAME_FIELDS}
 
@@ -302,27 +317,32 @@ class Importer:
             return 0, False
         selected = 0
         if len(candidates) > 1:
-            self._print_fields("Current entry", current)
-            print("\nCandidates:")
-            for idx, candidate in enumerate(candidates, start=1):
-                similarity = _similarity_string(
-                    _candidate_similarity(current, candidate.fields)
+            while True:
+                self._print_fields("Current entry", current)
+                print("\nCandidates:")
+                for idx, candidate in enumerate(candidates, start=1):
+                    similarity = _similarity_string(
+                        _candidate_similarity(current, candidate.fields)
+                    )
+                    print(f"  Candidate {idx} ({similarity}):")
+                    for key, value in candidate.fields.items():
+                        rendered = self._render_value(key, value)
+                        if rendered is not None:
+                            print(f"    {key}: {rendered}")
+                choice = input_options_with_numbers(
+                    ("Skip", "Ignore", "Quit"),
+                    len(candidates),
+                    default="s",
                 )
-                print(f"  Candidate {idx} ({similarity}):")
-                for key, value in candidate.fields.items():
-                    rendered = self._render_value(key, value)
-                    if rendered is not None:
-                        print(f"    {key}: {rendered}")
-            choice = input_options_with_numbers(
-                ("Skip", "Quit"),
-                len(candidates),
-                default="s",
-            )
-            if choice.isdigit():
-                selected = int(choice) - 1
-            elif choice == "q":
-                return 0, True
-            else:
+                if choice.isdigit():
+                    selected = int(choice) - 1
+                    break
+                if choice == "i":
+                    if self._ignore_import(current):
+                        return 0, False
+                    continue
+                if choice == "q":
+                    return 0, True
                 return 0, False
         candidate = candidates[selected]
         proposed = dict(current)
@@ -344,6 +364,7 @@ class Importer:
                 [(f"id {existing.id}", current, proposed)],
                 fields,
                 include_merge=True,
+                include_ignore=True,
             )
             if choice in {"n", "c"}:
                 return 0, False
@@ -361,6 +382,10 @@ class Importer:
                         existing.id, candidate.fields.get("achievements")
                     )
                 return (1 if updated else 0), False
+            if choice == "i":
+                if self._ignore_import(current):
+                    return 0, False
+                continue
             if choice == "e":
                 try:
                     edited = edit_items_in_editor([proposed])
@@ -466,6 +491,10 @@ class Importer:
                     break
                 if action == "s":
                     break
+                if action == "i":
+                    if self._ignore_import(task.original):
+                        break
+                    continue
                 if action == "e":
                     try:
                         edited = self._edit_candidate(candidates[selected])

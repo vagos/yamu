@@ -54,8 +54,13 @@ def run(args: argparse.Namespace, library: Library) -> int:
     if args.force and args.query:
         query, _ = build_game_query(args.query)
         existing_games = library.list_games(query)
-    existing_paths = {game.path for game in existing_games if game.path}
-    seen_paths = set() if args.force else set(existing_paths)
+    ignored_paths = library.list_ignored_import_paths()
+    existing_paths = {
+        str(game.path)
+        for game in existing_games
+        if game.path and str(game.path) not in ignored_paths
+    }
+    seen_paths = set() if args.force else set(existing_paths) | set(ignored_paths)
 
     def task_source():
         for provider in providers:

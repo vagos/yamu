@@ -55,3 +55,15 @@ def test_list_missing_status(tmp_path: Path) -> None:
         assert game2.id not in missing_ids
     finally:
         lib.close()
+
+
+def test_ignore_import_paths_are_persisted(tmp_path: Path) -> None:
+    db_path = tmp_path / "library.db"
+    lib = Library(str(db_path))
+    try:
+        lib.ignore_import_path("steam://1", "Game A")
+        lib.ignore_import_path("steam://2")
+
+        assert lib.list_ignored_import_paths() == {"steam://1", "steam://2"}
+    finally:
+        lib.close()

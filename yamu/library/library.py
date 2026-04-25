@@ -36,6 +36,14 @@ class Library:
             )
             """
         )
+        self.db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS ignored_imports (
+                path TEXT PRIMARY KEY,
+                title TEXT
+            )
+            """
+        )
         self._ensure_columns(
             {
                 "status": "TEXT",
@@ -171,6 +179,21 @@ class Library:
         with self.db.transaction():
             cur = self.db.execute("DELETE FROM games WHERE id = ?", [game_id])
         return cur.rowcount > 0
+
+    def ignore_import_path(self, path: str, title: str | None = None) -> None:
+        with self.db.transaction():
+            self.db.execute(
+                """
+                INSERT INTO ignored_imports (path, title)
+                VALUES (?, ?)
+                ON CONFLICT(path) DO UPDATE SET title = excluded.title
+                """,
+                [path, title],
+            )
+
+    def list_ignored_import_paths(self) -> set[str]:
+        rows = self.db.query("SELECT path FROM ignored_imports")
+        return {str(row["path"]) for row in rows if row["path"]}
 
     def close(self) -> None:
         self.db.close()

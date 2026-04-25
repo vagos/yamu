@@ -32,6 +32,7 @@ Import your library:
 
 During import, yamu prompts you to confirm metadata for newly discovered games.
 To reprocess existing entries and run metadata searches, use ``yamu import -f``.
+Use ``I`` to ignore a game path permanently so future imports skip it.
 If you need to update an existing entry manually, use ``yamu edit`` or
 ``yamu update``.
 

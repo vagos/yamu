@@ -51,6 +51,7 @@ def prompt_apply_changes(
     fields: Iterable[str],
     *,
     include_merge: bool = False,
+    include_ignore: bool = False,
 ) -> str:
     print(info("Changes:"))
     any_change = False
@@ -62,5 +63,7 @@ def prompt_apply_changes(
     options = ["continue Editing", "Apply"]
     if include_merge:
         options.append("Merge")
+    if include_ignore:
+        options.append("Ignore")
     options.append("Cancel")
     return input_options(tuple(options))

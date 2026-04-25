@@ -78,6 +78,22 @@ def test_importer_fetch_prompts_existing_apply(library, monkeypatch) -> None:
     assert updated_game.genre == "Action"
 
 
+def test_importer_ignore_new_game_persists_path(library, monkeypatch) -> None:
+    task = ImportTask(original={"title": "Game A", "path": "steam://1"})
+    importer = Importer(library, provider=StaticProvider([task]), threads=1)
+
+    monkeypatch.setattr(
+        "yamu.importer.pipeline.input_options", lambda *args, **kwargs: "i"
+    )
+
+    completed, updated = importer.run([task])
+
+    assert completed == 0
+    assert updated == 0
+    assert library.list_games() == []
+    assert library.list_ignored_import_paths() == {"steam://1"}
+
+
 def test_importer_force_apply_overwrites_fields(library, monkeypatch) -> None:
     game = library.add_game(
         {
@@ -111,6 +127,29 @@ def test_importer_force_apply_overwrites_fields(library, monkeypatch) -> None:
     assert updated_game is not None
     assert updated_game.genre == "Action"
     assert updated_game.critic_rating == 92.0
+
+
+def test_importer_force_ignore_existing_persists_path(library, monkeypatch) -> None:
+    game = library.add_game({"title": "Game A", "path": "steam://1"})
+    importer = Importer(library, threads=1, prompt_existing=True)
+    candidates = [
+        ImportCandidate(
+            fields={"title": "Game A", "path": "steam://1", "genre": "Action"}
+        )
+    ]
+
+    monkeypatch.setattr(
+        "yamu.importer.pipeline.prompt_apply_changes", lambda *args, **kwargs: "i"
+    )
+
+    updated, should_quit = importer.prompt_existing_update(game, candidates)
+
+    assert updated == 0
+    assert should_quit is False
+    assert library.list_ignored_import_paths() == {"steam://1"}
+    unchanged = library.get_game(game.id)
+    assert unchanged is not None
+    assert unchanged.genre is None
 
 
 def test_importer_force_merge_only_fills_missing_fields(library, monkeypatch) -> None:
