@@ -19,6 +19,8 @@ def add_subparser(subparsers: argparse._SubParsersAction) -> None:
     parser.add_argument("--path")
     parser.add_argument("--collection")
     parser.add_argument("--status")
+    parser.add_argument("--igdb-rating", type=float)
+    parser.add_argument("--critic-rating", type=float)
     parser.set_defaults(func=run)
 
 
@@ -34,6 +36,8 @@ def run(args: argparse.Namespace, library: Library) -> int:
         "path": args.path,
         "collection": args.collection,
         "status": args.status,
+        "igdb_rating": args.igdb_rating,
+        "critic_rating": args.critic_rating,
     }
     game = library.update_game(args.id, changes)
     if not game:

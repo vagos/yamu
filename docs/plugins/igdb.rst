@@ -3,7 +3,7 @@ IGDB
 
 The ``igdb`` plugin adds metadata search results during import. It uses the
 IGDB API (via Twitch credentials) to supply release dates, genres, developers,
-publishers, and platforms.
+publishers, platforms, and ratings.
 
 Enable it in your config:
 

@@ -49,6 +49,8 @@ def diff_item(
 def prompt_apply_changes(
     changes: List[tuple[str, Dict[str, Any], Dict[str, Any]]],
     fields: Iterable[str],
+    *,
+    include_merge: bool = False,
 ) -> str:
     print(info("Changes:"))
     any_change = False
@@ -57,4 +59,8 @@ def prompt_apply_changes(
     if not any_change:
         print(info("No changes to apply."))
         return "n"
-    return input_options(("continue Editing", "Apply", "Cancel"))
+    options = ["continue Editing", "Apply"]
+    if include_merge:
+        options.append("Merge")
+    options.append("Cancel")
+    return input_options(tuple(options))

@@ -112,6 +112,7 @@ def fetch_igdb_games(term: str, config: dict, limit: int = 5) -> list[dict]:
         f'search "{term}"; '
         "fields name,first_release_date,genres.name,platforms.name,"
         "involved_companies.developer,involved_companies.publisher,"
+        "rating,aggregated_rating,"
         "involved_companies.company.name; "
         f"limit {max(1, limit)};"
     )
@@ -182,6 +183,12 @@ def _candidate_fields(entry: dict) -> dict[str, Any]:
     fields["platform"] = _extract_platforms(entry)
     fields["developer"] = _extract_companies(entry, "developer")
     fields["publisher"] = _extract_companies(entry, "publisher")
+    rating = entry.get("rating")
+    if isinstance(rating, (int, float)):
+        fields["igdb_rating"] = float(rating)
+    aggregated_rating = entry.get("aggregated_rating")
+    if isinstance(aggregated_rating, (int, float)):
+        fields["critic_rating"] = float(aggregated_rating)
     return fields
 
 

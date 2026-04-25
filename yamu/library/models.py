@@ -16,6 +16,8 @@ GAME_FIELDS = [
     "collection",
     "status",
     "artpath",
+    "igdb_rating",
+    "critic_rating",
 ]
 
 
@@ -33,6 +35,8 @@ class Game:
     collection: str | None = None
     status: str | None = None
     artpath: str | None = None
+    igdb_rating: float | None = None
+    critic_rating: float | None = None
 
     @classmethod
     def from_row(cls, row: Dict[str, Any]) -> "Game":
@@ -49,6 +53,8 @@ class Game:
             collection=row["collection"],
             status=row["status"],
             artpath=row["artpath"],
+            igdb_rating=row["igdb_rating"],
+            critic_rating=row["critic_rating"],
         )
 
 

@@ -7,6 +7,7 @@ from yamu.importer.pipeline import ImportCandidate, Importer
 from yamu.library.library import Library
 from yamu.util.color import error, info, success
 from yamu.util.config import load_config
+from yamu.util.query import build_game_query
 from yamuplug import import_providers, load_plugins
 
 
@@ -19,10 +20,15 @@ def add_subparser(subparsers: argparse._SubParsersAction) -> None:
         action="store_true",
         help="Reprocess games already in the library",
     )
+    parser.add_argument("query", nargs="*", help="Match existing games when using -f")
     parser.set_defaults(func=run)
 
 
 def run(args: argparse.Namespace, library: Library) -> int:
+    if args.query and not args.force:
+        print(error("QUERY is only supported with --force"))
+        return 1
+
     config = load_config()
     load_plugins(config.get("plugins", []))
     providers = import_providers()
@@ -44,7 +50,11 @@ def run(args: argparse.Namespace, library: Library) -> int:
         )
         return 1
 
-    existing_paths = {game.path for game in library.list_games() if game.path}
+    existing_games = library.list_games()
+    if args.force and args.query:
+        query, _ = build_game_query(args.query)
+        existing_games = library.list_games(query)
+    existing_paths = {game.path for game in existing_games if game.path}
     seen_paths = set() if args.force else set(existing_paths)
 
     def task_source():

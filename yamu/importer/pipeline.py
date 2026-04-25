@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import queue
 import threading
+import re
 from dataclasses import dataclass
+from difflib import SequenceMatcher
 from typing import Any, Dict, Iterable, List, Optional
 
 from yamu.library.library import Library
 from yamu.library.models import GAME_FIELDS
 from yamu.util.changes import show_model_changes
-from yamu.util.color import error, info, warning
+from yamu.util.color import colorize, error, info, warning
 from yamu.util.prompt import input_options, input_options_with_numbers, input_yn
 from yamu.util.edit_flow import edit_items_in_editor, diff_item, prompt_apply_changes
 
@@ -27,6 +29,81 @@ class ImportTask:
 class Provider:
     def candidates(self, task: ImportTask) -> List[ImportCandidate]:
         return [ImportCandidate(fields=task.original)]
+
+
+SIMILARITY_FIELDS = (
+    "title",
+    "platform",
+    "release_date",
+    "genre",
+    "developer",
+    "publisher",
+    "region",
+)
+
+SIMILARITY_WEIGHTS = {
+    "title": 5.0,
+    "platform": 1.0,
+    "release_date": 1.0,
+    "genre": 1.0,
+    "developer": 1.0,
+    "publisher": 1.0,
+    "region": 1.0,
+}
+
+
+def _normalize_similarity_value(value: Any) -> str:
+    text = str(value).strip().lower()
+    text = re.sub(r"[^a-z0-9]+", " ", text)
+    return " ".join(text.split())
+
+
+def _string_similarity(left: Any, right: Any) -> float:
+    normalized_left = _normalize_similarity_value(left)
+    normalized_right = _normalize_similarity_value(right)
+    if not normalized_left and not normalized_right:
+        return 1.0
+    if not normalized_left or not normalized_right:
+        return 0.0
+    return SequenceMatcher(a=normalized_left, b=normalized_right).ratio()
+
+
+def _candidate_similarity(base: Dict[str, Any], candidate: Dict[str, Any]) -> float:
+    weighted_score = 0.0
+    total_weight = 0.0
+    for field in SIMILARITY_FIELDS:
+        left = base.get(field)
+        right = candidate.get(field)
+        if left in (None, "") or right in (None, ""):
+            continue
+        weight = SIMILARITY_WEIGHTS.get(field, 1.0)
+        weighted_score += _string_similarity(left, right) * weight
+        total_weight += weight
+    if total_weight:
+        return weighted_score / total_weight
+    return _string_similarity(base.get("title"), candidate.get("title"))
+
+
+def _sort_candidates(
+    base: Dict[str, Any], candidates: List[ImportCandidate]
+) -> List[ImportCandidate]:
+    return sorted(
+        candidates,
+        key=lambda candidate: _candidate_similarity(base, candidate.fields),
+        reverse=True,
+    )
+
+
+def _similarity_color_name(similarity: float) -> str:
+    if similarity >= 0.9:
+        return "text_success"
+    if similarity >= 0.7:
+        return "text_warning"
+    return "text_error"
+
+
+def _similarity_string(similarity: float) -> str:
+    return colorize(_similarity_color_name(similarity), f"{similarity * 100:.1f}%")
 
 
 class Importer:
@@ -81,13 +158,16 @@ class Importer:
                 print("  Candidates:")
                 for idx, candidate in enumerate(candidates, start=1):
                     summary = self._summarize_fields(candidate.fields)
+                    similarity = _similarity_string(
+                        _candidate_similarity(task.original, candidate.fields)
+                    )
                     label = f"{idx}."
                     if candidate.source and candidate.source != "base":
                         if summary:
                             summary = f"{summary} [{candidate.source}]"
                         else:
                             summary = f"[{candidate.source}]"
-                    print(f"    {label} {summary}")
+                    print(f"    {label} ({similarity}) {summary}")
 
                 choice = input_options_with_numbers(
                     ("Skip", "Quit"),
@@ -140,6 +220,18 @@ class Importer:
                 continue
             updates[key] = value
         return updates
+
+    def _merge_missing_fields(
+        self, current: Dict[str, Any], candidate: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        merged = dict(current)
+        for key, value in candidate.items():
+            if value is None or value == "":
+                continue
+            if merged.get(key) not in (None, ""):
+                continue
+            merged[key] = value
+        return merged
 
     def _apply_updates(
         self, game_id: int, fields: Dict[str, Any], exclude: set[str]
@@ -203,16 +295,20 @@ class Importer:
 
     def prompt_existing_update(
         self, existing: Any, candidates: List[ImportCandidate]
-    ) -> int:
-        if not candidates:
-            return 0
+    ) -> tuple[int, bool]:
         current = self._game_fields(existing)
+        candidates = _sort_candidates(current, candidates)
+        if not candidates:
+            return 0, False
         selected = 0
         if len(candidates) > 1:
             self._print_fields("Current entry", current)
             print("\nCandidates:")
             for idx, candidate in enumerate(candidates, start=1):
-                print(f"  Candidate {idx}:")
+                similarity = _similarity_string(
+                    _candidate_similarity(current, candidate.fields)
+                )
+                print(f"  Candidate {idx} ({similarity}):")
                 for key, value in candidate.fields.items():
                     rendered = self._render_value(key, value)
                     if rendered is not None:
@@ -225,9 +321,9 @@ class Importer:
             if choice.isdigit():
                 selected = int(choice) - 1
             elif choice == "q":
-                return 0
+                return 0, True
             else:
-                return 0
+                return 0, False
         candidate = candidates[selected]
         proposed = dict(current)
         for key, value in candidate.fields.items():
@@ -235,9 +331,11 @@ class Importer:
                 continue
             proposed[key] = value
         proposed["id"] = existing.id
+        merged = self._merge_missing_fields(current, candidate.fields)
+        merged["id"] = existing.id
         fields = [field for field in GAME_FIELDS if field != "id"]
         if not diff_item(current, proposed, fields):
-            return 0
+            return 0, False
         if len(candidates) == 1:
             self._print_fields("Current entry", current)
         self._print_fields("Fetched entry", candidate.fields)
@@ -245,39 +343,47 @@ class Importer:
             choice = prompt_apply_changes(
                 [(f"id {existing.id}", current, proposed)],
                 fields,
+                include_merge=True,
             )
             if choice in {"n", "c"}:
-                return 0
+                return 0, False
             if choice == "a":
                 updated = self._apply_diff(existing.id, current, proposed, fields)
                 if updated:
                     self._apply_achievements(
                         existing.id, candidate.fields.get("achievements")
                     )
-                return 1 if updated else 0
+                return (1 if updated else 0), False
+            if choice == "m":
+                updated = self._apply_diff(existing.id, current, merged, fields)
+                if updated:
+                    self._apply_achievements(
+                        existing.id, candidate.fields.get("achievements")
+                    )
+                return (1 if updated else 0), False
             if choice == "e":
                 try:
                     edited = edit_items_in_editor([proposed])
                 except Exception as exc:
                     print(error(f"Edit failed: {exc}"))
                     if not input_yn("Edit again? (Y/n)", require=False):
-                        return 0
+                        return 0, False
                     continue
                 if len(edited) != 1:
                     print(error("Edited list length does not match original"))
                     if not input_yn("Edit again? (Y/n)", require=False):
-                        return 0
+                        return 0, False
                     continue
                 entry = edited[0]
                 if entry.get("id") != existing.id:
                     print(error("Edited entry must include the original id"))
                     if not input_yn("Edit again? (Y/n)", require=False):
-                        return 0
+                        return 0, False
                     continue
                 allowed = set(GAME_FIELDS + ["id"])
                 proposed = self._sanitize_entry(entry, allowed)
                 continue
-        return 0
+        return 0, False
 
     def _produce(self, task_source: Iterable[ImportTask]) -> None:
         for task in task_source:
@@ -316,6 +422,7 @@ class Importer:
                 done_workers += 1
                 continue
             task, candidates = item
+            candidates = _sort_candidates(task.original, candidates)
 
             path = task.original.get("path")
             existing = self.library.get_game_by_path(str(path)) if path else None
@@ -331,9 +438,14 @@ class Importer:
                         existing.id, task.original.get("achievements")
                     )
                     continue
-                updated += self.prompt_existing_update(existing, candidates)
+                updated_count, should_quit = self.prompt_existing_update(
+                    existing, candidates
+                )
+                updated += updated_count
                 if tick is not None:
                     tick()
+                if should_quit:
+                    return completed, updated
                 continue
 
             if not candidates:

@@ -29,6 +29,8 @@ class Library:
                 collection TEXT,
                 status TEXT,
                 artpath TEXT,
+                igdb_rating REAL,
+                critic_rating REAL,
                 tags TEXT,
                 steam_tags TEXT
             )
@@ -42,6 +44,8 @@ class Library:
                 "steam_tags": "TEXT",
                 "year_released": "INTEGER",
                 "release_date": "TEXT",
+                "igdb_rating": "REAL",
+                "critic_rating": "REAL",
             }
         )
         self.db.execute(

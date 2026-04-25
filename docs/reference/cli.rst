@@ -22,11 +22,12 @@ import
 
 ::
 
-    yamu import [-f]
+    yamu import [-f] [QUERY...]
 
 Run all enabled import plugins. New games are queued for interactive review.
 By default, existing games are skipped; pass ``-f`` to reprocess existing games
-and run metadata searches for confirmation.
+and run metadata searches for confirmation. When ``-f`` is used, an optional
+query limits which existing library entries are revisited.
 
 list
 ~~~~
