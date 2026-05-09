@@ -214,6 +214,39 @@ def test_importer_force_prompt_quit_returns_quit(library, monkeypatch) -> None:
     assert should_quit is True
 
 
+def test_importer_force_prompt_shows_similarity_for_candidates(
+    library, capsys, monkeypatch
+) -> None:
+    game = library.add_game({"title": "Game A", "path": "steam://1"})
+    importer = Importer(library, threads=1, prompt_existing=True)
+    candidates = [
+        ImportCandidate(
+            fields={"title": "Game A", "path": "steam://1", "genre": "Action"},
+            source="igdb",
+        ),
+        ImportCandidate(
+            fields={"title": "Different", "path": "steam://1"},
+            source="steam",
+        ),
+    ]
+
+    monkeypatch.setattr(
+        "yamu.importer.pipeline.input_options_with_numbers",
+        lambda *args, **kwargs: "1",
+    )
+    monkeypatch.setattr(
+        "yamu.importer.pipeline.prompt_apply_changes", lambda *args, **kwargs: "n"
+    )
+
+    updated, should_quit = importer.prompt_existing_update(game, candidates)
+
+    assert updated == 0
+    assert should_quit is False
+    output = capsys.readouterr().out
+    assert "100.0%" in output
+    assert "[igdb]" in output
+
+
 def test_sanitize_entry_keeps_types(library) -> None:
     importer = Importer(library, threads=1)
     entry = {"release_date": "2006", "title": "Game A", "ignored": "x"}

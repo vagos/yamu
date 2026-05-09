@@ -155,26 +155,10 @@ class Importer:
 
         if len(candidates) > 1:
             while True:
-                print("  Candidates:")
-                for idx, candidate in enumerate(candidates, start=1):
-                    summary = self._summarize_fields(candidate.fields)
-                    similarity = _similarity_string(
-                        _candidate_similarity(task.original, candidate.fields)
-                    )
-                    label = f"{idx}."
-                    if candidate.source and candidate.source != "base":
-                        if summary:
-                            summary = f"{summary} [{candidate.source}]"
-                        else:
-                            summary = f"[{candidate.source}]"
-                    print(f"    {label} ({similarity}) {summary}")
-
-                choice = input_options_with_numbers(
-                    ("Skip", "Ignore", "Quit"),
-                    len(candidates),
+                choice, selected = self._prompt_candidate_selection(
+                    task.original, candidates, selected=selected
                 )
                 if choice.isdigit():
-                    selected = int(choice) - 1
                     break
                 if choice == "i":
                     if self._ignore_import(task.original):
@@ -308,6 +292,42 @@ class Importer:
             parts.append(str(release_date))
         return " - ".join(parts)
 
+    def _print_candidate(self, base: Dict[str, Any], candidate: ImportCandidate, idx: int) -> None:
+        summary = self._summarize_fields(candidate.fields)
+        similarity = _similarity_string(
+            _candidate_similarity(base, candidate.fields)
+        )
+        label = f"{idx}."
+        if candidate.source and candidate.source != "base":
+            summary = f"{summary} [{candidate.source}]" if summary else f"[{candidate.source}]"
+        print(f"    {label} ({similarity}) {summary}")
+
+    def _prompt_candidate_selection(
+        self,
+        base: Dict[str, Any],
+        candidates: List[ImportCandidate],
+        *,
+        selected: int = 0,
+    ) -> tuple[str, int]:
+        while True:
+            print("  Candidates:")
+            for idx, candidate in enumerate(candidates, start=1):
+                self._print_candidate(base, candidate, idx)
+
+            choice = input_options_with_numbers(
+                ("Skip", "Ignore", "Quit"),
+                len(candidates),
+                default="s",
+            )
+            if choice.isdigit():
+                selected = int(choice) - 1
+                return (choice, selected)
+            if choice == "i":
+                return ("i", selected)
+            if choice == "q":
+                return ("q", selected)
+            return ("s", selected)
+
     def prompt_existing_update(
         self, existing: Any, candidates: List[ImportCandidate]
     ) -> tuple[int, bool]:
@@ -319,23 +339,10 @@ class Importer:
         if len(candidates) > 1:
             while True:
                 self._print_fields("Current entry", current)
-                print("\nCandidates:")
-                for idx, candidate in enumerate(candidates, start=1):
-                    similarity = _similarity_string(
-                        _candidate_similarity(current, candidate.fields)
-                    )
-                    print(f"  Candidate {idx} ({similarity}):")
-                    for key, value in candidate.fields.items():
-                        rendered = self._render_value(key, value)
-                        if rendered is not None:
-                            print(f"    {key}: {rendered}")
-                choice = input_options_with_numbers(
-                    ("Skip", "Ignore", "Quit"),
-                    len(candidates),
-                    default="s",
+                choice, selected = self._prompt_candidate_selection(
+                    current, candidates, selected=selected
                 )
                 if choice.isdigit():
-                    selected = int(choice) - 1
                     break
                 if choice == "i":
                     if self._ignore_import(current):
@@ -358,6 +365,8 @@ class Importer:
             return 0, False
         if len(candidates) == 1:
             self._print_fields("Current entry", current)
+        else:
+            print("")
         self._print_fields("Fetched entry", candidate.fields)
         while True:
             choice = prompt_apply_changes(
