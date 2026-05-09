@@ -15,27 +15,42 @@ def test_library_crud(tmp_path: Path) -> None:
                 "platform": "steam",
                 "igdb_rating": 82.5,
                 "critic_rating": 79.0,
+                "hltb_main_story": 12.5,
+                "hltb_main_extra": 31.0,
+                "hltb_completionist": 100.0,
             }
         )
         assert game.id is not None
         assert game.title == "Garry's Mod"
         assert game.igdb_rating == 82.5
         assert game.critic_rating == 79.0
+        assert game.hltb_main_story == 12.5
+        assert game.hltb_main_extra == 31.0
+        assert game.hltb_completionist == 100.0
 
         fetched = lib.get_game(game.id)
         assert fetched is not None
         assert fetched.title == "Garry's Mod"
         assert fetched.igdb_rating == 82.5
         assert fetched.critic_rating == 79.0
+        assert fetched.hltb_main_story == 12.5
+        assert fetched.hltb_main_extra == 31.0
+        assert fetched.hltb_completionist == 100.0
 
         updated = lib.update_game(
             game.id,
-            {"genre": "Sandbox", "igdb_rating": 85.0, "critic_rating": 81.0},
+            {
+                "genre": "Sandbox",
+                "igdb_rating": 85.0,
+                "critic_rating": 81.0,
+                "hltb_main_story": 13.0,
+            },
         )
         assert updated is not None
         assert updated.genre == "Sandbox"
         assert updated.igdb_rating == 85.0
         assert updated.critic_rating == 81.0
+        assert updated.hltb_main_story == 13.0
 
         assert lib.remove_game(game.id) is True
         assert lib.get_game(game.id) is None

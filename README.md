@@ -30,6 +30,7 @@ plugins:
   - steam
   - fetchart
   - igdb
+  - howlongtobeat
 
 steam:
   api_key: "your_key"
@@ -39,6 +40,11 @@ steam:
 igdb:
   client_id: "your_client_id"
   client_secret: "your_client_secret"
+
+howlongtobeat:
+  minimum_similarity: 0.4
+  similarity_case_sensitive: false
+  auto_filter_times: false
 ```
 
 ## Development

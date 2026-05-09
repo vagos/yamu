@@ -4,7 +4,7 @@ version = "0.2.0"
 description = "game library manager"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["PyYAML>=6.0", "Jinja2>=3.1"]
+dependencies = ["PyYAML>=6.0", "Jinja2>=3.1", "howlongtobeatpy>=1.0.21"]
 
 [project.optional-dependencies]
 dev = ["pytest>=7.4", "ruff>=0.6.0"]

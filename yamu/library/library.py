@@ -31,6 +31,9 @@ class Library:
                 artpath TEXT,
                 igdb_rating REAL,
                 critic_rating REAL,
+                hltb_main_story REAL,
+                hltb_main_extra REAL,
+                hltb_completionist REAL,
                 tags TEXT,
                 steam_tags TEXT
             )
@@ -54,6 +57,9 @@ class Library:
                 "release_date": "TEXT",
                 "igdb_rating": "REAL",
                 "critic_rating": "REAL",
+                "hltb_main_story": "REAL",
+                "hltb_main_extra": "REAL",
+                "hltb_completionist": "REAL",
             }
         )
         self.db.execute(

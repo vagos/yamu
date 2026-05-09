@@ -18,6 +18,9 @@ GAME_FIELDS = [
     "artpath",
     "igdb_rating",
     "critic_rating",
+    "hltb_main_story",
+    "hltb_main_extra",
+    "hltb_completionist",
 ]
 
 
@@ -37,6 +40,9 @@ class Game:
     artpath: str | None = None
     igdb_rating: float | None = None
     critic_rating: float | None = None
+    hltb_main_story: float | None = None
+    hltb_main_extra: float | None = None
+    hltb_completionist: float | None = None
 
     @classmethod
     def from_row(cls, row: Dict[str, Any]) -> "Game":
@@ -55,6 +61,9 @@ class Game:
             artpath=row["artpath"],
             igdb_rating=row["igdb_rating"],
             critic_rating=row["critic_rating"],
+            hltb_main_story=row["hltb_main_story"],
+            hltb_main_extra=row["hltb_main_extra"],
+            hltb_completionist=row["hltb_completionist"],
         )
 
 

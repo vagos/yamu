@@ -22,6 +22,10 @@ def user_config_path() -> Path:
     return _xdg_config_home() / "yamu" / DEFAULT_CONFIG_NAME
 
 
+def default_config_path() -> Path:
+    return Path(files("yamu").joinpath("config_default.yaml"))
+
+
 def _expand_path(value: str) -> str:
     return str(Path(os.path.expanduser(value)))
 
@@ -48,8 +52,7 @@ def _load_yaml(path: Path) -> Dict[str, Any]:
 
 
 def _load_default() -> Dict[str, Any]:
-    default_path = files("yamu").joinpath("config_default.yaml")
-    data = yaml.safe_load(default_path.read_text())
+    data = yaml.safe_load(default_config_path().read_text())
     if data is None:
         return {}
     if not isinstance(data, dict):

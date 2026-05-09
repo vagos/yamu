@@ -7,6 +7,8 @@ from yamu.library.library import Library
 from yamu.util.config import load_config
 from yamu.ui.commands import (
     add,
+    config,
+    hltb,
     list_,
     update,
     remove,
@@ -26,12 +28,14 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="yamu", description="Game library manager")
     parser.add_argument("--db", help="Override library database path")
 
-    config = load_config()
-    load_plugins(config.get("plugins", []))
-    enabled = set(config.get("plugins", []))
+    cfg = load_config()
+    load_plugins(cfg.get("plugins", []))
+    enabled = set(cfg.get("plugins", []))
 
     subparsers = parser.add_subparsers(dest="command", required=True)
     add.add_subparser(subparsers)
+    config.add_subparser(subparsers)
+    hltb.add_subparser(subparsers)
     list_.add_subparser(subparsers)
     update.add_subparser(subparsers)
     remove.add_subparser(subparsers)

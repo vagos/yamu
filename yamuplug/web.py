@@ -78,6 +78,9 @@ def _rep(game) -> dict:
         "status": game.status,
         "artpath": game.artpath,
         "release_date": release_date,
+        "hltb_main_story": game.hltb_main_story,
+        "hltb_main_extra": game.hltb_main_extra,
+        "hltb_completionist": game.hltb_completionist,
     }
 
 

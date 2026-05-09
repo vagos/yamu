@@ -1,5 +1,7 @@
 __all__ = [
     "add",
+    "config",
+    "hltb",
     "list_",
     "update",
     "remove",

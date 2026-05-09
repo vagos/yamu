@@ -43,3 +43,7 @@ igdb:
 epic:
   legendary_path: "legendary"
   delay: 0.0
+howlongtobeat:
+  minimum_similarity: 0.4
+  similarity_case_sensitive: false
+  auto_filter_times: false

@@ -11,5 +11,6 @@ under ``plugins`` and configure them in top-level sections.
     igdb
     epic
     fetchart
+    hltb
     web
     completion
