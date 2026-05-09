@@ -292,14 +292,18 @@ class Importer:
             parts.append(str(release_date))
         return " - ".join(parts)
 
-    def _print_candidate(self, base: Dict[str, Any], candidate: ImportCandidate, idx: int) -> None:
+    def _print_candidate(
+        self, base: Dict[str, Any], candidate: ImportCandidate, idx: int
+    ) -> None:
         summary = self._summarize_fields(candidate.fields)
-        similarity = _similarity_string(
-            _candidate_similarity(base, candidate.fields)
-        )
+        similarity = _similarity_string(_candidate_similarity(base, candidate.fields))
         label = f"{idx}."
         if candidate.source and candidate.source != "base":
-            summary = f"{summary} [{candidate.source}]" if summary else f"[{candidate.source}]"
+            summary = (
+                f"{summary} [{candidate.source}]"
+                if summary
+                else f"[{candidate.source}]"
+            )
         print(f"    {label} ({similarity}) {summary}")
 
     def _prompt_candidate_selection(
