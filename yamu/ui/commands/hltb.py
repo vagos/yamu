@@ -51,7 +51,9 @@ def run(args: argparse.Namespace, library: Library) -> int:
         updates = {
             key: value
             for key, value in fields.items()
-            if key in HLTB_FIELDS and value is not None and getattr(game, key) in (None, "")
+            if key in HLTB_FIELDS
+            and value is not None
+            and getattr(game, key) in (None, "")
         }
         if not updates:
             return ("info", game.title, "already has hltb data")
