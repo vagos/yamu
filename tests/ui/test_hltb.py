@@ -3,7 +3,8 @@ from __future__ import annotations
 import argparse
 from types import SimpleNamespace
 
-from yamu.ui.commands import hltb as hltb_cmd
+from yamuplug import howlongtobeat as hltb_cmd
+from yamu.plugins import load_plugins
 
 
 def test_hltb_subparser() -> None:
@@ -18,6 +19,7 @@ def test_hltb_subparser() -> None:
 
 
 def test_hltb_command_updates_existing_game(library, monkeypatch, capsys) -> None:
+    load_plugins(["howlongtobeat"])
     game = library.add_game({"title": "Borderlands"})
 
     monkeypatch.setattr(

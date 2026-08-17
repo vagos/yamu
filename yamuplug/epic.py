@@ -6,7 +6,7 @@ import time
 from typing import Any, Iterable
 
 from yamu.importer.pipeline import ImportCandidate, ImportTask
-from yamuplug import register_import_provider
+from yamuplug import YamuPlugin
 
 
 class EpicError(RuntimeError):
@@ -145,4 +145,6 @@ class EpicImportProvider:
         return candidates
 
 
-register_import_provider(EpicImportProvider())
+class EpicPlugin(YamuPlugin):
+    def import_providers(self):
+        return [EpicImportProvider()]

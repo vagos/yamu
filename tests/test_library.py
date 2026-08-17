@@ -4,12 +4,13 @@ from pathlib import Path
 
 import yamu.plugins as plugin_registry
 from yamu.library.library import Library
+from yamuplug.steam import list_achievements, upsert_achievements
 
 
 def test_core_schema_does_not_include_plugin_fields(
     tmp_path: Path, monkeypatch
 ) -> None:
-    monkeypatch.setattr(plugin_registry, "_GAME_FIELD_TYPES", {})
+    monkeypatch.setattr(plugin_registry, "_instances", [])
     db_path = tmp_path / "library.db"
     lib = Library(str(db_path))
     try:
@@ -21,8 +22,7 @@ def test_core_schema_does_not_include_plugin_fields(
 
 
 def test_library_crud(tmp_path: Path) -> None:
-    import yamuplug.howlongtobeat  # noqa: F401
-    import yamuplug.igdb  # noqa: F401
+    plugin_registry.load_plugins(["howlongtobeat", "igdb"])
 
     db_path = tmp_path / "library.db"
     lib = Library(str(db_path))
@@ -103,17 +103,19 @@ def test_ignore_import_paths_are_persisted(tmp_path: Path) -> None:
 
 
 def test_remove_game_also_removes_achievements(tmp_path: Path) -> None:
+    plugin_registry.load_plugins(["steam"])
     db_path = tmp_path / "library.db"
     lib = Library(str(db_path))
     try:
         game = lib.add_game({"title": "Game A"})
-        lib.upsert_achievements(
+        upsert_achievements(
+            lib,
             game.id,
             [{"api_name": "ach-1", "name": "Achievement", "achieved": 1}],
         )
 
-        assert len(lib.list_achievements(game.id)) == 1
+        assert len(list_achievements(lib, game.id)) == 1
         assert lib.remove_game(game.id) is True
-        assert lib.list_achievements(game.id) == []
+        assert list_achievements(lib, game.id) == []
     finally:
         lib.close()

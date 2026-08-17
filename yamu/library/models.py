@@ -3,7 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable
 
-from yamu.plugins import PluginConflictError, game_field_types
+from yamu import plugins
+from yamu.plugins import PluginConflictError
 
 
 GAME_FIELD_TYPES = {
@@ -25,7 +26,7 @@ GAME_FIELDS = list(GAME_FIELD_TYPES)
 
 def all_game_field_types() -> dict[str, str]:
     fields = dict(GAME_FIELD_TYPES)
-    for name, sql_type in game_field_types().items():
+    for name, sql_type in plugins.types(Game).items():
         existing = fields.get(name)
         if existing is not None and existing != sql_type:
             raise PluginConflictError(

@@ -8,17 +8,13 @@ from yamu.util.config import load_config
 from yamu.ui.commands import (
     add,
     config,
-    hltb,
     list_,
     update,
     remove,
     import_,
     edit,
-    completion,
-    web,
-    fetchart,
 )
-from yamuplug import load_plugins
+from yamu.plugins import commands, load_plugins
 
 
 CommandFunc = Callable[[argparse.Namespace, Library], int]
@@ -28,25 +24,18 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="yamu", description="Game library manager")
     parser.add_argument("--db", help="Override library database path")
 
-    cfg = load_config()
-    load_plugins(cfg.get("plugins", []))
-    enabled = set(cfg.get("plugins", []))
+    load_plugins()
 
     subparsers = parser.add_subparsers(dest="command", required=True)
     add.add_subparser(subparsers)
     config.add_subparser(subparsers)
-    hltb.add_subparser(subparsers)
     list_.add_subparser(subparsers)
     update.add_subparser(subparsers)
     remove.add_subparser(subparsers)
     import_.add_subparser(subparsers)
     edit.add_subparser(subparsers)
-    if "completion" in enabled:
-        completion.add_subparser(subparsers)
-    if "web" in enabled:
-        web.add_subparser(subparsers)
-    if "fetchart" in enabled:
-        fetchart.add_subparser(subparsers)
+    for add_plugin_subparser in commands():
+        add_plugin_subparser(subparsers)
 
     return parser
 

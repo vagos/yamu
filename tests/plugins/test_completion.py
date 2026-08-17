@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from yamuplug import completion
+from yamuplug.steam import upsert_achievements
 
 
 def test_normalize_status() -> None:
@@ -9,7 +10,8 @@ def test_normalize_status() -> None:
 
 def test_suggest_beaten_from_achievements(library, monkeypatch) -> None:
     game = library.add_game({"title": "Game A"})
-    library.upsert_achievements(
+    upsert_achievements(
+        library,
         game.id,
         [
             {"api_name": "a", "name": "A", "achieved": 1},
@@ -27,7 +29,8 @@ def test_suggest_beaten_from_achievements(library, monkeypatch) -> None:
 
 def test_auto_mark_beaten_from_achievements(library) -> None:
     game = library.add_game({"title": "Game A"})
-    library.upsert_achievements(
+    upsert_achievements(
+        library,
         game.id,
         [
             {"api_name": "a", "name": "A", "achieved": 1},

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from yamu.ui.commands import completion
+from yamuplug import completion
 
 
 def test_completion_sets_status(library, capsys) -> None:

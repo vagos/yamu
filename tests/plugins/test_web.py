@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from yamuplug import web
+from yamu.plugins import load_plugins
 
 
 def test_format_release_date() -> None:
@@ -17,6 +18,7 @@ def test_resolve_static_path_blocks_traversal() -> None:
 
 
 def test_rep_includes_hltb_fields() -> None:
+    load_plugins(["howlongtobeat"])
     game = type(
         "G",
         (),

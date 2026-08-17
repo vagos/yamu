@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
@@ -8,7 +9,10 @@ from urllib.parse import parse_qs, urlparse
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from yamu.library.library import Library
 from yamu.library.models import all_game_fields
+from yamu.util.config import load_config
 from yamu.util.query import build_query
+from yamuplug import YamuPlugin
+from yamuplug.steam import list_achievements
 
 
 def _asset_path(rel: str) -> Path:
@@ -129,7 +133,7 @@ class WebHandler(BaseHTTPRequestHandler):
                 self._send_file(200, art_path, _content_type_for_path(art_path))
                 return
             if self.path.endswith("/achievements"):
-                achievements = self.server.library.list_achievements(game_id)
+                achievements = list_achievements(self.server.library, game_id)
                 self._send_json(200, {"achievements": achievements})
                 return
             game = self.server.library.get_game(game_id)
@@ -192,3 +196,24 @@ def run_server(library: Library, host: str, port: int) -> None:
     server = WebServer((host, port), library)
     print(f"Serving Yamu library on http://{host}:{port}")
     server.serve_forever()
+
+
+class WebPlugin(YamuPlugin):
+    def commands(self):
+        return [add_subparser]
+
+
+def add_subparser(subparsers: argparse._SubParsersAction) -> None:
+    parser = subparsers.add_parser("web", help="Browse the library in a web UI")
+    parser.add_argument("--host")
+    parser.add_argument("--port", type=int)
+    parser.set_defaults(func=run)
+
+
+def run(args: argparse.Namespace, library: Library) -> int:
+    config = load_config()
+    web_cfg = config.get("web", {})
+    host = args.host or web_cfg.get("host", "127.0.0.1")
+    port = args.port or int(web_cfg.get("port", 8337))
+    run_server(library, host, port)
+    return 0

@@ -9,6 +9,7 @@ from typing import Any, Dict, Iterable, List, Optional
 
 from yamu.library.library import Library
 from yamu.library.models import all_game_fields
+from yamu.plugins import handle_import_fields
 from yamu.util.changes import show_model_changes
 from yamu.util.color import colorize, error, info, warning
 from yamu.util.prompt import input_options, input_options_with_numbers, input_yn
@@ -243,13 +244,8 @@ class Importer:
         self.library.update_game(game_id, updates)
         return True
 
-    def _apply_achievements(
-        self, game_id: int, achievements: list[dict] | None
-    ) -> None:
-        if achievements is None:
-            return
-        if achievements:
-            self.library.upsert_achievements(game_id, achievements)
+    def _handle_import_fields(self, game_id: int, fields: Dict[str, Any]) -> None:
+        handle_import_fields(self.library, game_id, fields)
 
     def _ignore_import(self, fields: Dict[str, Any]) -> bool:
         path = fields.get("path")
@@ -384,16 +380,12 @@ class Importer:
             if choice == "a":
                 updated = self._apply_diff(existing.id, current, proposed, fields)
                 if updated:
-                    self._apply_achievements(
-                        existing.id, candidate.fields.get("achievements")
-                    )
+                    self._handle_import_fields(existing.id, candidate.fields)
                 return (1 if updated else 0), False
             if choice == "m":
                 updated = self._apply_diff(existing.id, current, merged, fields)
                 if updated:
-                    self._apply_achievements(
-                        existing.id, candidate.fields.get("achievements")
-                    )
+                    self._handle_import_fields(existing.id, candidate.fields)
                 return (1 if updated else 0), False
             if choice == "i":
                 if self._ignore_import(current):
@@ -472,9 +464,7 @@ class Importer:
                         existing.id, task.original, {"path", "title"}
                     ):
                         updated += 1
-                    self._apply_achievements(
-                        existing.id, task.original.get("achievements")
-                    )
+                    self._handle_import_fields(existing.id, task.original)
                     continue
                 updated_count, should_quit = self.prompt_existing_update(
                     existing, candidates
@@ -496,9 +486,7 @@ class Importer:
                 if action == "a":
                     game = self.library.add_game(candidates[selected].fields)
                     completed += 1
-                    self._apply_achievements(
-                        game.id, candidates[selected].fields.get("achievements")
-                    )
+                    self._handle_import_fields(game.id, candidates[selected].fields)
                     if on_imported is not None:
                         on_imported(game)
                     break
@@ -528,7 +516,7 @@ class Importer:
                         continue
                     game = self.library.add_game(edited.fields)
                     completed += 1
-                    self._apply_achievements(game.id, edited.fields.get("achievements"))
+                    self._handle_import_fields(game.id, edited.fields)
                     if on_imported is not None:
                         on_imported(game)
                     break

@@ -10,12 +10,14 @@ from yamu.library.models import (
     all_game_fields,
     sanitize_fields,
 )
+from yamu import plugins
 
 
 class Library:
     def __init__(self, path: str) -> None:
         self.db = Database(path)
         self._ensure_schema()
+        plugins.setup_library(self)
 
     def _ensure_schema(self) -> None:
         self.db.execute(
@@ -46,22 +48,6 @@ class Library:
             """
         )
         self._ensure_columns(all_game_field_types())
-        self.db.execute(
-            """
-            CREATE TABLE IF NOT EXISTS achievements (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                game_id INTEGER NOT NULL,
-                api_name TEXT NOT NULL,
-                name TEXT,
-                description TEXT,
-                icon TEXT,
-                icon_gray TEXT,
-                achieved INTEGER,
-                unlock_time INTEGER,
-                UNIQUE(game_id, api_name)
-            )
-            """
-        )
 
     def _ensure_columns(self, columns: dict[str, str]) -> None:
         rows = self.db.query("PRAGMA table_info(games)")
@@ -72,6 +58,7 @@ class Library:
             self.db.execute(f"ALTER TABLE games ADD COLUMN {name} {col_type}")
 
     def add_game(self, data: Dict[str, Any]) -> Game:
+        self._ensure_columns(all_game_field_types())
         fields = sanitize_fields(data, all_game_fields())
         if "title" not in fields or not fields["title"]:
             raise ValueError("title is required")
@@ -111,6 +98,7 @@ class Library:
         return [Game.from_row(dict(row)) for row in rows]
 
     def update_game(self, game_id: int, changes: Dict[str, Any]) -> Game | None:
+        self._ensure_columns(all_game_field_types())
         fields = sanitize_fields(changes, all_game_fields())
         if not fields:
             return self.get_game(game_id)
@@ -124,50 +112,9 @@ class Library:
         changes = {"status": status}
         return self.update_game(game_id, changes)
 
-    def upsert_achievements(self, game_id: int, achievements: list[dict]) -> None:
-        rows = []
-        for entry in achievements:
-            rows.append(
-                (
-                    game_id,
-                    entry.get("api_name"),
-                    entry.get("name"),
-                    entry.get("description"),
-                    entry.get("icon"),
-                    entry.get("icon_gray"),
-                    entry.get("achieved", 0),
-                    entry.get("unlock_time", 0),
-                )
-            )
-        with self.db.transaction():
-            for row in rows:
-                self.db.execute(
-                    """
-                    INSERT INTO achievements
-                        (game_id, api_name, name, description, icon, icon_gray, achieved, unlock_time)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    ON CONFLICT(game_id, api_name)
-                    DO UPDATE SET
-                        name=excluded.name,
-                        description=excluded.description,
-                        icon=excluded.icon,
-                        icon_gray=excluded.icon_gray,
-                        achieved=excluded.achieved,
-                        unlock_time=excluded.unlock_time
-                    """,
-                    row,
-                )
-
-    def list_achievements(self, game_id: int) -> list[dict]:
-        rows = self.db.query(
-            "SELECT * FROM achievements WHERE game_id = ? ORDER BY achieved DESC, name",
-            [game_id],
-        )
-        return [dict(row) for row in rows]
-
     def remove_game(self, game_id: int) -> bool:
         with self.db.transaction():
-            self.db.execute("DELETE FROM achievements WHERE game_id = ?", [game_id])
+            plugins.remove_game(self, game_id)
             cur = self.db.execute("DELETE FROM games WHERE id = ?", [game_id])
         return cur.rowcount > 0
 

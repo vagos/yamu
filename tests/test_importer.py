@@ -9,6 +9,7 @@ from yamu.importer.pipeline import (
     _candidate_similarity,
     _sort_candidates,
 )
+from yamu.plugins import load_plugins
 
 
 class StaticProvider:
@@ -95,6 +96,7 @@ def test_importer_ignore_new_game_persists_path(library, monkeypatch) -> None:
 
 
 def test_importer_force_apply_overwrites_fields(library, monkeypatch) -> None:
+    load_plugins(["igdb"])
     game = library.add_game(
         {
             "title": "Game A",
@@ -153,6 +155,7 @@ def test_importer_force_ignore_existing_persists_path(library, monkeypatch) -> N
 
 
 def test_importer_force_merge_only_fills_missing_fields(library, monkeypatch) -> None:
+    load_plugins(["igdb"])
     game = library.add_game(
         {
             "title": "Game A",

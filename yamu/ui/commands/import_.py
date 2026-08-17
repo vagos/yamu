@@ -8,7 +8,7 @@ from yamu.library.library import Library
 from yamu.util.color import error, info, success
 from yamu.util.config import load_config
 from yamu.util.query import build_game_query
-from yamuplug import import_providers, load_plugins
+from yamu.plugins import import_providers, load_plugins
 
 
 def add_subparser(subparsers: argparse._SubParsersAction) -> None:
@@ -30,7 +30,7 @@ def run(args: argparse.Namespace, library: Library) -> int:
         return 1
 
     config = load_config()
-    load_plugins(config.get("plugins", []))
+    load_plugins()
     providers = import_providers()
     if not providers:
         print(error("No import providers registered"))

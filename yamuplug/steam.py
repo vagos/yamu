@@ -1,15 +1,20 @@
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import time
 import urllib.parse
 import urllib.request
 import urllib.error
+import sqlite3
 from typing import Any, Dict, Iterable, List
 
 from yamu.importer.pipeline import ImportCandidate, ImportTask
-from yamuplug import register_import_provider
+from yamu.library.library import Library
+from yamu.util.color import error, success, warning
+from yamu.util.config import load_config
+from yamuplug import YamuPlugin
 
 
 STEAM_OWNED_GAMES_URL = "https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/"
@@ -396,7 +401,7 @@ def import_achievements(
             ttl=ttl,
         )
         if normalized:
-            library.upsert_achievements(game.id, normalized)
+            upsert_achievements(library, game.id, normalized)
         updated_ids.append(game.id)
         if delay:
             time.sleep(delay)
@@ -497,4 +502,155 @@ class SteamImportProvider:
         return candidates
 
 
-register_import_provider(SteamImportProvider())
+def ensure_achievement_schema(library) -> None:
+    library.db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS achievements (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            game_id INTEGER NOT NULL,
+            api_name TEXT NOT NULL,
+            name TEXT,
+            description TEXT,
+            icon TEXT,
+            icon_gray TEXT,
+            achieved INTEGER,
+            unlock_time INTEGER,
+            UNIQUE(game_id, api_name)
+        )
+        """
+    )
+
+
+def upsert_achievements(library, game_id: int, achievements: list[dict]) -> None:
+    ensure_achievement_schema(library)
+    rows = []
+    for entry in achievements:
+        rows.append(
+            (
+                game_id,
+                entry.get("api_name"),
+                entry.get("name"),
+                entry.get("description"),
+                entry.get("icon"),
+                entry.get("icon_gray"),
+                entry.get("achieved", 0),
+                entry.get("unlock_time", 0),
+            )
+        )
+    with library.db.transaction():
+        for row in rows:
+            library.db.execute(
+                """
+                INSERT INTO achievements
+                    (game_id, api_name, name, description, icon, icon_gray, achieved, unlock_time)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(game_id, api_name)
+                DO UPDATE SET
+                    name=excluded.name,
+                    description=excluded.description,
+                    icon=excluded.icon,
+                    icon_gray=excluded.icon_gray,
+                    achieved=excluded.achieved,
+                    unlock_time=excluded.unlock_time
+                """,
+                row,
+            )
+
+
+def list_achievements(library, game_id: int) -> list[dict]:
+    try:
+        rows = library.db.query(
+            "SELECT * FROM achievements WHERE game_id = ? ORDER BY achieved DESC, name",
+            [game_id],
+        )
+    except sqlite3.OperationalError:
+        return []
+    return [dict(row) for row in rows]
+
+
+class SteamPlugin(YamuPlugin):
+    def commands(self):
+        return [add_subparser]
+
+    def import_providers(self):
+        return [SteamImportProvider()]
+
+    def setup_library(self, library) -> None:
+        ensure_achievement_schema(library)
+
+    def handle_import_fields(self, library, game_id: int, fields: dict[str, Any]) -> None:
+        achievements = fields.get("achievements")
+        if achievements:
+            upsert_achievements(library, game_id, achievements)
+
+    def remove_game(self, library, game_id: int) -> None:
+        try:
+            library.db.execute("DELETE FROM achievements WHERE game_id = ?", [game_id])
+        except sqlite3.OperationalError:
+            return
+
+
+def add_subparser(subparsers: argparse._SubParsersAction) -> None:
+    parser = subparsers.add_parser("steam", help="Import games from Steam")
+    parser.add_argument("steam_id", help="SteamID64")
+    parser.add_argument("--api-key", help="Steam Web API key (or set STEAM_API_KEY)")
+    parser.add_argument(
+        "--no-cache", action="store_true", help="Disable Steam appdetails cache"
+    )
+    parser.set_defaults(func=run)
+
+
+def run(args: argparse.Namespace, library: Library) -> int:
+    try:
+        config = load_config()
+        api_key = args.api_key or get_api_key(config)
+        games = fetch_owned_games(args.steam_id, api_key)
+    except SteamError as exc:
+        print(error(str(exc)))
+        return 1
+    added = 0
+    fetch_details = bool(config.get("steam", {}).get("fetch_details", False))
+    delay, retries, backoff, ttl = _rate_config(config)
+    if args.no_cache:
+        ttl = 0
+    cache_path, _ = _cache_paths(config)
+    cache = _load_cache(cache_path) if ttl > 0 else None
+    for game in games:
+        appid = game.get("appid")
+        name = game.get("name")
+        if not appid or not name:
+            continue
+        path = f"steam://{appid}"
+        if library.get_game_by_path(path):
+            continue
+        genre = None
+        release_date = None
+        if fetch_details:
+            details = fetch_app_details(
+                str(appid),
+                retries=retries,
+                backoff=backoff,
+                cache=cache,
+                ttl=ttl,
+            )
+            genre = extract_genres(details)
+            release_date = extract_release_date(details)
+            if delay:
+                time.sleep(delay)
+        library.add_game(
+            {
+                "title": name,
+                "platform": "steam",
+                "path": path,
+                "genre": genre,
+                "release_date": release_date,
+            }
+        )
+        added += 1
+    if cache is not None:
+        _save_cache(cache_path, cache)
+    if added == 0:
+        print(warning("No new games to import from Steam"))
+    else:
+        print(success(f"Imported {added} games from Steam"))
+    return 0

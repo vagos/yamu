@@ -2,31 +2,31 @@ from __future__ import annotations
 
 import pytest
 
-import yamuplug
+import yamu.plugins as plugin_registry
 
 
 def test_load_plugins_warns_for_missing_plugin(monkeypatch, capsys) -> None:
-    monkeypatch.setattr(yamuplug, "_LOADED_PLUGINS", set())
+    monkeypatch.setattr(plugin_registry, "_instances", [])
 
     def fake_import(name: str) -> None:
         raise ModuleNotFoundError(f"No module named {name!r}", name=name)
 
-    monkeypatch.setattr(yamuplug, "import_module", fake_import)
+    monkeypatch.setattr(plugin_registry, "import_module", fake_import)
 
-    yamuplug.load_plugins(["missing"])
+    plugin_registry.load_plugins(["missing"])
 
     output = capsys.readouterr().out
     assert "Plugin not found: missing" in output
-    assert yamuplug._LOADED_PLUGINS == set()
+    assert list(plugin_registry.find_plugins()) == []
 
 
 def test_load_plugins_reraises_nested_import_errors(monkeypatch) -> None:
-    monkeypatch.setattr(yamuplug, "_LOADED_PLUGINS", set())
+    monkeypatch.setattr(plugin_registry, "_instances", [])
 
     def fake_import(_name: str) -> None:
         raise ModuleNotFoundError("No module named 'requests'", name="requests")
 
-    monkeypatch.setattr(yamuplug, "import_module", fake_import)
+    monkeypatch.setattr(plugin_registry, "import_module", fake_import)
 
     with pytest.raises(ModuleNotFoundError, match="requests"):
-        yamuplug.load_plugins(["igdb"])
+        plugin_registry.load_plugins(["igdb"])
