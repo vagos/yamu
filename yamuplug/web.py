@@ -7,7 +7,7 @@ from urllib.parse import parse_qs, urlparse
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from yamu.library.library import Library
-from yamu.library.models import GAME_FIELDS
+from yamu.library.models import all_game_fields
 from yamu.util.query import build_query
 
 
@@ -65,7 +65,7 @@ def _render_template(name: str, **context: object) -> bytes:
 def _rep(game) -> dict:
     fmt = _load_ui_date_format()
     release_date = _format_release_date(game.release_date, fmt)
-    return {
+    rep = {
         "id": game.id,
         "title": game.title,
         "platform": game.platform,
@@ -78,10 +78,11 @@ def _rep(game) -> dict:
         "status": game.status,
         "artpath": game.artpath,
         "release_date": release_date,
-        "hltb_main_story": game.hltb_main_story,
-        "hltb_main_extra": game.hltb_main_extra,
-        "hltb_completionist": game.hltb_completionist,
     }
+    for field in all_game_fields():
+        if field not in rep:
+            rep[field] = getattr(game, field, None)
+    return rep
 
 
 def _load_ui_date_format() -> str:
@@ -142,7 +143,7 @@ class WebHandler(BaseHTTPRequestHandler):
             parsed = urlparse(self.path)
             params = parse_qs(parsed.query)
             query = params.get("q", [""])[0]
-            allowed_fields = set(GAME_FIELDS + ["id", "status", "artpath"])
+            allowed_fields = set(all_game_fields() + ["id", "status", "artpath"])
             parts = query.split() if query else []
             try:
                 q = build_query(parts, allowed_fields)

@@ -4,7 +4,12 @@ from typing import Any, Dict
 
 from yamu.dbcore.db import Database
 from yamu.dbcore.query import Query, AndQuery
-from yamu.library.models import Game, GAME_FIELDS, sanitize_fields
+from yamu.library.models import (
+    Game,
+    all_game_field_types,
+    all_game_fields,
+    sanitize_fields,
+)
 
 
 class Library:
@@ -28,14 +33,7 @@ class Library:
                 path TEXT,
                 collection TEXT,
                 status TEXT,
-                artpath TEXT,
-                igdb_rating REAL,
-                critic_rating REAL,
-                hltb_main_story REAL,
-                hltb_main_extra REAL,
-                hltb_completionist REAL,
-                tags TEXT,
-                steam_tags TEXT
+                artpath TEXT
             )
             """
         )
@@ -47,21 +45,7 @@ class Library:
             )
             """
         )
-        self._ensure_columns(
-            {
-                "status": "TEXT",
-                "artpath": "TEXT",
-                "tags": "TEXT",
-                "steam_tags": "TEXT",
-                "year_released": "INTEGER",
-                "release_date": "TEXT",
-                "igdb_rating": "REAL",
-                "critic_rating": "REAL",
-                "hltb_main_story": "REAL",
-                "hltb_main_extra": "REAL",
-                "hltb_completionist": "REAL",
-            }
-        )
+        self._ensure_columns(all_game_field_types())
         self.db.execute(
             """
             CREATE TABLE IF NOT EXISTS achievements (
@@ -88,7 +72,7 @@ class Library:
             self.db.execute(f"ALTER TABLE games ADD COLUMN {name} {col_type}")
 
     def add_game(self, data: Dict[str, Any]) -> Game:
-        fields = sanitize_fields(data, GAME_FIELDS)
+        fields = sanitize_fields(data, all_game_fields())
         if "title" not in fields or not fields["title"]:
             raise ValueError("title is required")
         columns = ", ".join(fields.keys())
@@ -127,7 +111,7 @@ class Library:
         return [Game.from_row(dict(row)) for row in rows]
 
     def update_game(self, game_id: int, changes: Dict[str, Any]) -> Game | None:
-        fields = sanitize_fields(changes, GAME_FIELDS)
+        fields = sanitize_fields(changes, all_game_fields())
         if not fields:
             return self.get_game(game_id)
         set_clause = ", ".join([f"{key} = ?" for key in fields.keys()])

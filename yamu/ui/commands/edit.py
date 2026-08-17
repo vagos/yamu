@@ -5,7 +5,7 @@ import subprocess
 from typing import Any, Dict, List
 
 from yamu.library.library import Library
-from yamu.library.models import GAME_FIELDS
+from yamu.library.models import all_game_fields
 from yamu.util.color import error, info, success, warning
 from yamu.util.prompt import input_yn
 from yamu.util.edit_flow import edit_items_in_editor, diff_item, prompt_apply_changes
@@ -13,7 +13,8 @@ from yamu.util.editor import dump_yaml
 from yamu.util.query import build_game_query
 
 
-EDIT_FIELDS = ["id"] + GAME_FIELDS
+def edit_fields() -> list[str]:
+    return ["id"] + all_game_fields()
 
 
 def add_subparser(subparsers: argparse._SubParsersAction) -> None:
@@ -27,13 +28,13 @@ def _select_games(args: argparse.Namespace, library: Library) -> List[Dict[str, 
     games = library.list_games(query)
     items: List[Dict[str, Any]] = []
     for game in games:
-        data = {field: getattr(game, field) for field in EDIT_FIELDS}
+        data = {field: getattr(game, field, None) for field in edit_fields()}
         items.append(data)
     return items
 
 
 def _diff_item(before: Dict[str, Any], after: Dict[str, Any]) -> Dict[str, Any]:
-    fields = [field for field in EDIT_FIELDS if field != "id"]
+    fields = [field for field in edit_fields() if field != "id"]
     return diff_item(before, after, fields)
 
 
@@ -94,7 +95,7 @@ def run(args: argparse.Namespace, library: Library) -> int:
             change_entries.append((f"id {game_id}", before, after))
         choice = prompt_apply_changes(
             change_entries,
-            [field for field in EDIT_FIELDS if field != "id"],
+            [field for field in edit_fields() if field != "id"],
         )
         if choice == "n":
             return 0

@@ -8,11 +8,19 @@ import urllib.request
 from typing import Any
 
 from yamu.importer.pipeline import ImportCandidate
+from yamu.plugins import register_game_fields
 from yamuplug import register_import_provider
 
 
 IGDB_TOKEN_URL = "https://id.twitch.tv/oauth2/token"
 IGDB_GAMES_URL = "https://api.igdb.com/v4/games"
+
+register_game_fields(
+    {
+        "igdb_rating": "REAL",
+        "critic_rating": "REAL",
+    }
+)
 
 
 class IgdbError(RuntimeError):

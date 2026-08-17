@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from yamu.dbcore.query import CONTAINS_FIELDS, Query, parse_query
-from yamu.library.models import GAME_FIELDS
+from yamu.library.models import all_game_fields
 
 
 def allowed_game_fields(include_id: bool = True) -> set[str]:
-    fields = set(GAME_FIELDS)
+    fields = set(all_game_fields())
     if include_id:
         fields.add("id")
     return fields

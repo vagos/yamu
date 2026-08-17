@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 
 from yamu.library.library import Library
-from yamu.library.models import GAME_FIELDS
+from yamu.library.models import all_game_fields
 from yamu.util.color import error, success
 
 
@@ -29,7 +29,7 @@ def run(args: argparse.Namespace, library: Library) -> int:
     if not args.title:
         from yamu.util.edit_flow import edit_items_in_editor
 
-        template = [{field: "" for field in GAME_FIELDS}]
+        template = [{field: "" for field in all_game_fields()}]
         edited = edit_items_in_editor(template)
         if not edited:
             return 1

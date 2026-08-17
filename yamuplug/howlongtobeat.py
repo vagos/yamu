@@ -5,6 +5,7 @@ from typing import Any
 from howlongtobeatpy import HowLongToBeat
 
 from yamu.importer.pipeline import ImportCandidate
+from yamu.plugins import register_game_fields
 from yamuplug import register_import_provider
 
 
@@ -17,6 +18,14 @@ _FIELD_MAP = {
     "main_extra": "hltb_main_extra",
     "completionist": "hltb_completionist",
 }
+
+register_game_fields(
+    {
+        "hltb_main_story": "REAL",
+        "hltb_main_extra": "REAL",
+        "hltb_completionist": "REAL",
+    }
+)
 
 
 def _config_section(config: dict) -> dict:

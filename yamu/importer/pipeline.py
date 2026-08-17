@@ -8,7 +8,7 @@ from difflib import SequenceMatcher
 from typing import Any, Dict, Iterable, List, Optional
 
 from yamu.library.library import Library
-from yamu.library.models import GAME_FIELDS
+from yamu.library.models import all_game_fields
 from yamu.util.changes import show_model_changes
 from yamu.util.color import colorize, error, info, warning
 from yamu.util.prompt import input_options, input_options_with_numbers, input_yn
@@ -185,7 +185,7 @@ class Importer:
         entry = edited[0]
         if not isinstance(entry, dict):
             raise ValueError("Edited entry must be a mapping")
-        allowed = set(GAME_FIELDS)
+        allowed = set(all_game_fields())
         cleaned = self._sanitize_entry(entry, allowed)
         return ImportCandidate(fields=cleaned)
 
@@ -263,7 +263,7 @@ class Importer:
         return True
 
     def _game_fields(self, game: Any) -> Dict[str, Any]:
-        return {field: getattr(game, field) for field in GAME_FIELDS}
+        return {field: getattr(game, field, None) for field in all_game_fields()}
 
     def _print_fields(self, title: str, data: Dict[str, Any]) -> None:
         print(f"\n{title}:")
@@ -364,7 +364,7 @@ class Importer:
         proposed["id"] = existing.id
         merged = self._merge_missing_fields(current, candidate.fields)
         merged["id"] = existing.id
-        fields = [field for field in GAME_FIELDS if field != "id"]
+        fields = [field for field in all_game_fields() if field != "id"]
         if not diff_item(current, proposed, fields):
             return 0, False
         if len(candidates) == 1:
@@ -418,7 +418,7 @@ class Importer:
                     if not input_yn("Edit again? (Y/n)", require=False):
                         return 0, False
                     continue
-                allowed = set(GAME_FIELDS + ["id"])
+                allowed = set(all_game_fields() + ["id"])
                 proposed = self._sanitize_entry(entry, allowed)
                 continue
         return 0, False
@@ -518,7 +518,7 @@ class Importer:
                     changed = show_model_changes(
                         candidates[selected].fields,
                         edited.fields,
-                        GAME_FIELDS,
+                        all_game_fields(),
                         header="candidate",
                     )
                     if not changed:

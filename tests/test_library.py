@@ -2,10 +2,28 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import yamu.plugins as plugin_registry
 from yamu.library.library import Library
 
 
+def test_core_schema_does_not_include_plugin_fields(
+    tmp_path: Path, monkeypatch
+) -> None:
+    monkeypatch.setattr(plugin_registry, "_GAME_FIELD_TYPES", {})
+    db_path = tmp_path / "library.db"
+    lib = Library(str(db_path))
+    try:
+        columns = {row["name"] for row in lib.db.query("PRAGMA table_info(games)")}
+        assert "hltb_main_story" not in columns
+        assert "igdb_rating" not in columns
+    finally:
+        lib.close()
+
+
 def test_library_crud(tmp_path: Path) -> None:
+    import yamuplug.howlongtobeat  # noqa: F401
+    import yamuplug.igdb  # noqa: F401
+
     db_path = tmp_path / "library.db"
     lib = Library(str(db_path))
     try:

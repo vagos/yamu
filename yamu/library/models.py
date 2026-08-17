@@ -3,25 +3,40 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable
 
+from yamu.plugins import PluginConflictError, game_field_types
 
-GAME_FIELDS = [
-    "title",
-    "platform",
-    "release_date",
-    "genre",
-    "developer",
-    "publisher",
-    "region",
-    "path",
-    "collection",
-    "status",
-    "artpath",
-    "igdb_rating",
-    "critic_rating",
-    "hltb_main_story",
-    "hltb_main_extra",
-    "hltb_completionist",
-]
+
+GAME_FIELD_TYPES = {
+    "title": "TEXT",
+    "platform": "TEXT",
+    "release_date": "TEXT",
+    "genre": "TEXT",
+    "developer": "TEXT",
+    "publisher": "TEXT",
+    "region": "TEXT",
+    "path": "TEXT",
+    "collection": "TEXT",
+    "status": "TEXT",
+    "artpath": "TEXT",
+}
+
+GAME_FIELDS = list(GAME_FIELD_TYPES)
+
+
+def all_game_field_types() -> dict[str, str]:
+    fields = dict(GAME_FIELD_TYPES)
+    for name, sql_type in game_field_types().items():
+        existing = fields.get(name)
+        if existing is not None and existing != sql_type:
+            raise PluginConflictError(
+                f"Plugin field {name} conflicts with a core field type."
+            )
+        fields[name] = sql_type
+    return fields
+
+
+def all_game_fields() -> list[str]:
+    return list(all_game_field_types())
 
 
 @dataclass
@@ -38,33 +53,27 @@ class Game:
     collection: str | None = None
     status: str | None = None
     artpath: str | None = None
-    igdb_rating: float | None = None
-    critic_rating: float | None = None
-    hltb_main_story: float | None = None
-    hltb_main_extra: float | None = None
-    hltb_completionist: float | None = None
 
     @classmethod
     def from_row(cls, row: Dict[str, Any]) -> "Game":
-        return cls(
+        game = cls(
             id=row["id"],
             title=row["title"],
-            platform=row["platform"],
-            release_date=row["release_date"],
-            genre=row["genre"],
-            developer=row["developer"],
-            publisher=row["publisher"],
-            region=row["region"],
-            path=row["path"],
-            collection=row["collection"],
-            status=row["status"],
-            artpath=row["artpath"],
-            igdb_rating=row["igdb_rating"],
-            critic_rating=row["critic_rating"],
-            hltb_main_story=row["hltb_main_story"],
-            hltb_main_extra=row["hltb_main_extra"],
-            hltb_completionist=row["hltb_completionist"],
+            platform=row.get("platform"),
+            release_date=row.get("release_date"),
+            genre=row.get("genre"),
+            developer=row.get("developer"),
+            publisher=row.get("publisher"),
+            region=row.get("region"),
+            path=row.get("path"),
+            collection=row.get("collection"),
+            status=row.get("status"),
+            artpath=row.get("artpath"),
         )
+        for field in all_game_fields():
+            if field not in GAME_FIELDS and field in row:
+                setattr(game, field, row[field])
+        return game
 
 
 def sanitize_fields(data: Dict[str, Any], allowed: Iterable[str]) -> Dict[str, Any]:
