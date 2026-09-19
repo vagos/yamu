@@ -7,7 +7,7 @@ requires-python = ">=3.10"
 dependencies = ["PyYAML>=6.0", "Jinja2>=3.1", "howlongtobeatpy>=1.0.21"]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.4", "ruff>=0.6.0"]
+dev = ["pytest>=7.4", "ruff==0.14.10"]
 docs = [
     "sphinx>=7.2",
     "pydata-sphinx-theme>=0.15",
