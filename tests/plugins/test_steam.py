@@ -1,6 +1,28 @@
 from __future__ import annotations
 
+import io
+import json
+from urllib.parse import parse_qs, urlparse
+
 from yamuplug import steam
+
+
+def test_fetch_owned_games_includes_unvetted_apps(monkeypatch) -> None:
+    games = [{"appid": 757910, "name": "Away"}]
+
+    def fake_urlopen(url, timeout):
+        params = parse_qs(urlparse(url).query)
+        assert params["key"] == ["test-key"]
+        assert params["steamid"] == ["123"]
+        assert params["include_appinfo"] == ["1"]
+        assert params["include_played_free_games"] == ["1"]
+        # Steam otherwise silently excludes games with limited profile features.
+        returned = games if params.get("skip_unvetted_apps") == ["0"] else []
+        return io.BytesIO(json.dumps({"response": {"games": returned}}).encode())
+
+    monkeypatch.setattr(steam.urllib.request, "urlopen", fake_urlopen)
+
+    assert steam.fetch_owned_games("123", "test-key") == games
 
 
 def test_extract_genres() -> None:

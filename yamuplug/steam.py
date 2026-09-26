@@ -51,6 +51,7 @@ def fetch_owned_games(steam_id: str, api_key: str) -> List[dict]:
         "steamid": steam_id,
         "include_appinfo": 1,
         "include_played_free_games": 1,
+        "skip_unvetted_apps": 0,
     }
     url = f"{STEAM_OWNED_GAMES_URL}?{urllib.parse.urlencode(params)}"
     with urllib.request.urlopen(url, timeout=30) as response:
